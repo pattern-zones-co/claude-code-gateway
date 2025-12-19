@@ -80,12 +80,20 @@ export interface ClaudeCliOutput {
   type: "result" | "error";
   subtype?: string;
   result?: string;
-  cost_usd?: number;
+  total_cost_usd?: number;
   duration_ms?: number;
   duration_api_ms?: number;
   is_error?: boolean;
   session_id?: string;
   num_turns?: number;
+  // New format (Claude CLI 1.0.17+)
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+  };
+  // Legacy format (kept for backwards compatibility)
   total_tokens_in?: number;
   total_tokens_out?: number;
 }

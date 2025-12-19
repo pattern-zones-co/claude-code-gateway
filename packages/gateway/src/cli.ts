@@ -247,14 +247,18 @@ function parseCliOutput(
     );
   }
 
+  // Extract usage - prefer new format, fall back to legacy
+  const inputTokens =
+    resultOutput.usage?.input_tokens ?? resultOutput.total_tokens_in ?? 0;
+  const outputTokens =
+    resultOutput.usage?.output_tokens ?? resultOutput.total_tokens_out ?? 0;
+
   return {
     text: resultOutput.result || "",
     usage: {
-      inputTokens: resultOutput.total_tokens_in || 0,
-      outputTokens: resultOutput.total_tokens_out || 0,
-      totalTokens:
-        (resultOutput.total_tokens_in || 0) +
-        (resultOutput.total_tokens_out || 0),
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
     },
     sessionId: resultOutput.session_id || existingSessionId || uuidv4(),
     rawOutput: resultOutput,
