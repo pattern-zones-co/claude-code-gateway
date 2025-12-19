@@ -49,20 +49,35 @@ if [ -n "$STAGED_TS_FILES" ] || [ -n "$STAGED_JSON_FILES" ]; then
 fi
 
 # TypeScript type checking (no emit, just check types)
+# Only check packages that have staged files
 if [ -n "$STAGED_TS_FILES" ]; then
     echo "🔍 Running TypeScript type checking..."
 
     if [ -d "node_modules" ]; then
-        # Type check each package without emitting files
         TYPE_CHECK_FAILED=0
+        PACKAGES_CHECKED=0
+
+        # Check each package only if it has staged files
         for pkg_dir in packages/gateway packages/sdks/typescript; do
-            if [ -f "$pkg_dir/tsconfig.json" ]; then
+            # Check if any staged file is in this package
+            HAS_STAGED_FILES=0
+            for staged_file in $STAGED_TS_FILES; do
+                case "$staged_file" in
+                    "$pkg_dir"/*) HAS_STAGED_FILES=1; break ;;
+                esac
+            done
+
+            if [ $HAS_STAGED_FILES -eq 1 ] && [ -f "$pkg_dir/tsconfig.json" ]; then
+                PACKAGES_CHECKED=$((PACKAGES_CHECKED + 1))
                 if ! bun tsc --noEmit -p "$pkg_dir/tsconfig.json" 2>&1; then
                     TYPE_CHECK_FAILED=1
                 fi
             fi
         done
-        if [ $TYPE_CHECK_FAILED -eq 1 ]; then
+
+        if [ $PACKAGES_CHECKED -eq 0 ]; then
+            echo "✅ No packages with staged TypeScript files need type checking."
+        elif [ $TYPE_CHECK_FAILED -eq 1 ]; then
             echo "❌ TypeScript errors found! Please fix them before committing."
             CHECKS_FAILED=1
         else
@@ -179,7 +194,7 @@ if [ -n "$STAGED_DOCKER_FILES" ]; then
             fi
         elif echo "$dockerfile" | grep -q "docker-compose"; then
             if command -v docker >/dev/null 2>&1; then
-                if ! docker compose config >/dev/null 2>&1; then
+                if ! docker compose -f "$dockerfile" config >/dev/null 2>&1; then
                     echo "❌ Docker compose config validation failed for $dockerfile"
                     DOCKER_VALIDATION_FAILED=1
                     CHECKS_FAILED=1

@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -37,5 +40,11 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Test
-        run: bun run test
+      - name: Test with coverage
+        run: bun run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: packages/gateway/coverage/lcov.info,packages/sdks/typescript/coverage/lcov.info
+          fail_ci_if_error: false
