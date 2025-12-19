@@ -1,0 +1,37 @@
+name: claude-code-gateway
+services:
+  gateway:
+    build: .
+    ports:
+      - "${PORT:-3100}:3100"
+    environment:
+      PORT: 3100
+      # HOME required for Claude CLI to find its config directory
+      HOME: /home/bun
+      # API key for authenticating requests to the gateway
+      CLAUDE_CODE_GATEWAY_API_KEY: ${CLAUDE_CODE_GATEWAY_API_KEY}
+      # Claude auth: set CLAUDE_CODE_OAUTH_TOKEN for Max subscription,
+      # or ANTHROPIC_API_KEY for API auth. If both are set, OAuth takes precedence.
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      # Named volume for Claude CLI data (non-root bun user)
+      - claude-data:/home/bun/.claude
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Note: read_only disabled because Claude CLI needs to write to /home/bun/.claude.json
+    read_only: false
+    tmpfs:
+      - /tmp:mode=1777,size=100m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  claude-data:
