@@ -1,9 +1,17 @@
 {
 	"name": "@pattern-zones-co/koine",
 	"version": "1.0.0",
-	"private": true,
 	"description": "HTTP gateway service for Claude Code CLI",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/pattern-zones-co/koine.git",
+		"directory": "packages/gateway"
+	},
+	"homepage": "https://github.com/pattern-zones-co/koine",
+	"bugs": "https://github.com/pattern-zones-co/koine/issues",
+	"author": "Pattern Zones Co",
 	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc",
@@ -34,5 +42,8 @@
 	"engines": {
 		"node": ">=20",
 		"bun": ">=1.1"
-	}
+	},
+	"keywords": ["claude", "claude-code", "anthropic", "ai", "gateway", "api"],
+	"license": "AGPL-3.0",
+	"files": ["dist", "README.md"]
 }

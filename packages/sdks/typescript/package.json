@@ -2,6 +2,14 @@
 	"name": "@pattern-zones-co/koine-sdk",
 	"version": "1.0.0",
 	"description": "TypeScript SDK for Koine gateway",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/pattern-zones-co/koine.git",
+		"directory": "packages/sdks/typescript"
+	},
+	"homepage": "https://github.com/pattern-zones-co/koine",
+	"bugs": "https://github.com/pattern-zones-co/koine/issues",
+	"author": "Pattern Zones Co",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"exports": {
@@ -35,5 +43,6 @@
 		"bun": ">=1.1"
 	},
 	"keywords": ["claude", "claude-code", "anthropic", "ai", "sdk", "gateway"],
-	"license": "AGPL-3.0"
+	"license": "AGPL-3.0",
+	"files": ["dist", "README.md"]
 }
