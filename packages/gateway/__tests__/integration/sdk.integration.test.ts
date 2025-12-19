@@ -7,6 +7,8 @@
  */
 
 import { spawn } from "node:child_process";
+import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import {
 	afterAll,
 	afterEach,
@@ -21,7 +23,6 @@ import { z } from "zod";
 import {
 	createCliResultJson,
 	createMockChildProcess,
-	createSSEEvent,
 	createStreamAssistantMessage,
 	createStreamResultMessage,
 } from "../helpers.js";
@@ -30,25 +31,18 @@ import {
 const TEST_API_KEY = vi.hoisted(() => {
 	const key = "sdk-integration-test-key-12345";
 	process.env.CLAUDE_CODE_WRAPPER_API_KEY = key;
-	// Use a specific port unlikely to conflict with other services
-	process.env.PORT = "45123";
+	// Use port 0 to let OS assign an available port (avoids conflicts in parallel runs)
+	process.env.PORT = "0";
 	return key;
 });
 
-// Mock CLI subprocess for deterministic responses
+// Mock CLI subprocess (NOT the HTTP layer - SDK makes real fetch calls)
 vi.mock("node:child_process", () => ({ spawn: vi.fn() }));
 const mockSpawn = vi.mocked(spawn);
 
-// Import SDK after env vars are set
-// Using dynamic import to ensure mocks and env vars are in place
-const sdkImport = vi.hoisted(async () => {
-	const sdk = await import("@pattern-zones-co/koine-sdk");
-	return sdk;
-});
-
 describe("SDK Integration Tests", () => {
-	const TEST_PORT = 45123;
-	const baseUrl = `http://localhost:${TEST_PORT}`;
+	let baseUrl: string;
+	let server: Server;
 
 	// SDK functions (imported dynamically)
 	// biome-ignore lint/suspicious/noExplicitAny: assigned from dynamic import
@@ -69,11 +63,19 @@ describe("SDK Integration Tests", () => {
 		KoineError = sdk.KoineError;
 
 		// Import gateway to start the server (after env vars and mocks are set)
-		// The server starts listening when the module is imported
-		await import("../../src/index.js");
+		const gateway = await import("../../src/index.js");
+		server = gateway.server;
 
-		// Give the server a moment to start
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		// Get the actual port assigned by the OS
+		const address = server.address() as AddressInfo;
+		baseUrl = `http://localhost:${address.port}`;
+	});
+
+	afterAll(async () => {
+		// Close the server to prevent resource leaks and port conflicts
+		await new Promise<void>((resolve, reject) => {
+			server.close((err) => (err ? reject(err) : resolve()));
+		});
 	});
 
 	beforeEach(() => {

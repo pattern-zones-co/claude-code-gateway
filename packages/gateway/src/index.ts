@@ -84,10 +84,11 @@ app.use(
 	},
 );
 
-// Start server
-app.listen(PORT, () => {
+// Start server and export for test cleanup
+const server = app.listen(PORT, () => {
 	logger.info(`Claude Code Wrapper listening on port ${PORT}`);
 	logger.info("API key authentication: enabled (required)");
 });
 
+export { server };
 export default app;
