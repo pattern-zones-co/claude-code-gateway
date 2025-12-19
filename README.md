@@ -1,10 +1,8 @@
 # Koine
 
-> The common language for your services.
-
 An HTTP gateway that exposes [Claude Code CLI](https://github.com/anthropics/claude-code) as a REST API, plus a TypeScript SDK for easy integration.
 
-Named after **koine** — the common tongue that connected the ancient Mediterranean — Koine translates protocols and manages requests so your apps can use Claude Code CLI just like you.
+> Named after **koine** — the common tongue that connected the ancient Mediterranean — Koine translates protocols and manages requests so your apps can use Claude Code CLI just like you.
 
 ## Packages
 
