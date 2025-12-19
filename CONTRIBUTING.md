@@ -5,17 +5,26 @@ We're eager for collaborators! This project is in early stages and there's plent
 ## Getting Started
 
 ```bash
-pnpm install
-pnpm dev      # Start gateway with hot reload
-pnpm test     # Run tests
-pnpm lint     # Type check
+bun install
+bun run dev      # Start gateway with hot reload
+bun run test     # Run tests
+bun run lint     # Lint check
 ```
+
+## Pre-commit Hooks
+
+Husky runs automatic checks on every commit. The hooks skip gracefully if optional tools aren't installed:
+
+- **shellcheck** - Shell script linting
+- **actionlint** - GitHub workflow validation
+- **ripsecrets** - Secret scanning
+- **ruff** - Python linting (for future Python SDK)
 
 ## How to Contribute
 
 1. Fork the repo and create a branch
 2. Make your changes
-3. Run `pnpm test && pnpm lint`
+3. Run `bun run test && bun run lint`
 4. Open a pull request
 
 That's it. We'll figure out the details together.
