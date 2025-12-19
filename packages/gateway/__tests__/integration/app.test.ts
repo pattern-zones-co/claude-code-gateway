@@ -7,7 +7,7 @@
 
 import { spawn } from "node:child_process";
 import request from "supertest";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCliResultJson, createMockChildProcess } from "../helpers.js";
 
 // Set required environment variable BEFORE any imports
@@ -31,6 +31,14 @@ import app from "../../src/index.js";
 describe("Claude Code Wrapper App (Integration)", () => {
 	const validAuthHeader = `Bearer ${TEST_API_KEY}`;
 
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	describe("Authentication", () => {
 		it("allows /health without authentication", async () => {
 			const mockProc = createMockChildProcess();
@@ -38,11 +46,11 @@ describe("Claude Code Wrapper App (Integration)", () => {
 
 			const responsePromise = request(app).get("/health");
 
-			// Simulate successful claude --version check
+			// Simulate successful claude --version check (50ms for CI reliability)
 			setTimeout(() => {
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 10);
+			}, 50);
 
 			const res = await responsePromise;
 
@@ -95,7 +103,7 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 10);
+			}, 50);
 
 			const res = await responsePromise;
 
@@ -123,7 +131,7 @@ describe("Claude Code Wrapper App (Integration)", () => {
 			setTimeout(() => {
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 10);
+			}, 50);
 
 			const res = await responsePromise;
 
@@ -146,7 +154,7 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 10);
+			}, 50);
 
 			const res = await responsePromise;
 
@@ -175,7 +183,7 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 10);
+			}, 50);
 
 			const res = await responsePromise;
 
@@ -223,7 +231,7 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 10);
+			}, 50);
 
 			const res = await responsePromise;
 
