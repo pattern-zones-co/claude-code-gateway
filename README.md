@@ -13,7 +13,8 @@ Named after **Koine Greek** — the "common tongue" that connected the ancient M
 | `@pattern-zones-co/koine` | HTTP gateway server wrapping Claude Code CLI |
 | `@pattern-zones-co/koine-sdk` | TypeScript SDK for gateway clients |
 
-> **Important: Review Anthropic's Terms of Service**
+> [!WARNING]
+> **Review Anthropic's Terms of Service**
 >
 > This gateway supports two authentication methods for Claude CLI:
 > - **Subscription plans** (Claude Pro/Max) via OAuth token
