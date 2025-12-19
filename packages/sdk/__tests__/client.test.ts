@@ -1,16 +1,16 @@
 /**
- * Tests for Claude Code Gateway SDK client functions.
+ * Tests for Koine SDK client functions.
  *
- * Tests the HTTP client layer that communicates with the Claude Code
+ * Tests the HTTP client layer that communicates with the Koine
  * gateway service. Covers successful responses, error handling, timeouts,
  * and schema validation.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { z } from "zod";
-import type { ClaudeCodeGatewayConfig } from "../src/types.js";
+import type { KoineConfig } from "../src/types.js";
 import { generateText, generateObject, streamText } from "../src/client.js";
-import { ClaudeCodeError } from "../src/errors.js";
+import { KoineError } from "../src/errors.js";
 
 // Store original fetch to restore later
 const originalFetch = global.fetch;
@@ -44,13 +44,13 @@ function createMockResponse(
 }
 
 // Default test config
-const testConfig: ClaudeCodeGatewayConfig = {
+const testConfig: KoineConfig = {
   baseUrl: "http://localhost:3100",
   timeout: 30_000,
   authKey: "test-auth-key-12345",
 };
 
-describe("Claude Code Gateway SDK Client", () => {
+describe("Koine SDK Client", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -60,18 +60,18 @@ describe("Claude Code Gateway SDK Client", () => {
     global.fetch = originalFetch;
   });
 
-  describe("ClaudeCodeError", () => {
+  describe("KoineError", () => {
     it("should create error with message and code", () => {
-      const error = new ClaudeCodeError("Something went wrong", "TEST_ERROR");
+      const error = new KoineError("Something went wrong", "TEST_ERROR");
 
       expect(error.message).toBe("Something went wrong");
       expect(error.code).toBe("TEST_ERROR");
-      expect(error.name).toBe("ClaudeCodeError");
+      expect(error.name).toBe("KoineError");
       expect(error.rawText).toBeUndefined();
     });
 
     it("should create error with rawText for debugging", () => {
-      const error = new ClaudeCodeError(
+      const error = new KoineError(
         "Parse failed",
         "PARSE_ERROR",
         "raw output from CLI",
@@ -83,7 +83,7 @@ describe("Claude Code Gateway SDK Client", () => {
     });
 
     it("should be instanceof Error", () => {
-      const error = new ClaudeCodeError("test", "TEST");
+      const error = new KoineError("test", "TEST");
       expect(error).toBeInstanceOf(Error);
     });
   });
@@ -158,7 +158,7 @@ describe("Claude Code Gateway SDK Client", () => {
       expect(body.sessionId).toBe("existing-session");
     });
 
-    it("should throw ClaudeCodeError on HTTP 4xx error with error body", async () => {
+    it("should throw KoineError on HTTP 4xx error with error body", async () => {
       const errorResponse = createMockResponse(
         {
           error: "Invalid request parameters",
@@ -172,13 +172,13 @@ describe("Claude Code Gateway SDK Client", () => {
       await expect(
         generateText(testConfig, { prompt: "test" }),
       ).rejects.toMatchObject({
-        name: "ClaudeCodeError",
+        name: "KoineError",
         message: "Invalid request parameters",
         code: "INVALID_PARAMS",
       });
     });
 
-    it("should throw ClaudeCodeError on 401 unauthorized", async () => {
+    it("should throw KoineError on 401 unauthorized", async () => {
       const errorResponse = createMockResponse(
         { error: "Invalid authentication key", code: "UNAUTHORIZED" },
         { status: 401, statusText: "Unauthorized", ok: false },
@@ -194,7 +194,7 @@ describe("Claude Code Gateway SDK Client", () => {
       });
     });
 
-    it("should throw ClaudeCodeError on HTTP 5xx error", async () => {
+    it("should throw KoineError on HTTP 5xx error", async () => {
       const errorResponse = createMockResponse(
         { error: "Internal server error", code: "SERVER_ERROR" },
         { status: 500, statusText: "Internal Server Error", ok: false },
@@ -227,14 +227,14 @@ describe("Claude Code Gateway SDK Client", () => {
       });
     });
 
-    it("should throw ClaudeCodeError when response is not valid JSON", async () => {
+    it("should throw KoineError when response is not valid JSON", async () => {
       const invalidResponse = createMockResponse("not valid json at all");
       global.fetch = vi.fn().mockResolvedValue(invalidResponse);
 
       await expect(
         generateText(testConfig, { prompt: "test" }),
       ).rejects.toMatchObject({
-        message: "Invalid response from Claude Code gateway: expected JSON",
+        message: "Invalid response from Koine gateway: expected JSON",
         code: "INVALID_RESPONSE",
       });
     });
@@ -387,12 +387,12 @@ describe("Claude Code Gateway SDK Client", () => {
         });
         expect.fail("Should have thrown");
       } catch (error) {
-        expect(error).toBeInstanceOf(ClaudeCodeError);
-        expect((error as ClaudeCodeError).rawText).toBe('{"invalid": "data"}');
+        expect(error).toBeInstanceOf(KoineError);
+        expect((error as KoineError).rawText).toBe('{"invalid": "data"}');
       }
     });
 
-    it("should throw ClaudeCodeError on HTTP error", async () => {
+    it("should throw KoineError on HTTP error", async () => {
       const errorResponse = createMockResponse(
         { error: "Schema parse error", code: "SCHEMA_ERROR", rawText: "..." },
         { status: 422, statusText: "Unprocessable Entity", ok: false },
@@ -495,7 +495,7 @@ describe("Claude Code Gateway SDK Client", () => {
           schema: testSchema,
         }),
       ).rejects.toMatchObject({
-        message: "Invalid response from Claude Code gateway: expected JSON",
+        message: "Invalid response from Koine gateway: expected JSON",
         code: "INVALID_RESPONSE",
       });
     });
@@ -754,7 +754,7 @@ describe("Claude Code Gateway SDK Client", () => {
       expect(body.sessionId).toBe("existing-session-123");
     });
 
-    it("should throw ClaudeCodeError on HTTP error", async () => {
+    it("should throw KoineError on HTTP error", async () => {
       const errorResponse = createMockResponse(
         { error: "Rate limit exceeded", code: "RATE_LIMITED" },
         { status: 429, statusText: "Too Many Requests", ok: false },
@@ -770,7 +770,7 @@ describe("Claude Code Gateway SDK Client", () => {
       });
     });
 
-    it("should throw ClaudeCodeError when response body is null", async () => {
+    it("should throw KoineError when response body is null", async () => {
       const noBodyResponse = {
         ok: true,
         status: 200,
@@ -795,7 +795,7 @@ describe("Claude Code Gateway SDK Client", () => {
       await expect(
         streamText(testConfig, { prompt: "test" }),
       ).rejects.toMatchObject({
-        message: "No response body from Claude Code gateway",
+        message: "No response body from Koine gateway",
         code: "NO_RESPONSE_BODY",
       });
     });

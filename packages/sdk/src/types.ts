@@ -1,7 +1,7 @@
 /**
- * Configuration for connecting to a Claude Code Gateway service.
+ * Configuration for connecting to a Koine gateway service.
  */
-export interface ClaudeCodeGatewayConfig {
+export interface KoineConfig {
   /** Base URL of the gateway service (e.g., "http://localhost:3100") */
   baseUrl: string;
   /** Request timeout in milliseconds */
@@ -13,9 +13,9 @@ export interface ClaudeCodeGatewayConfig {
 }
 
 /**
- * Usage information from Claude Code gateway service.
+ * Usage information from Koine gateway service.
  */
-export interface ClaudeCodeUsage {
+export interface KoineUsage {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
@@ -26,7 +26,7 @@ export interface ClaudeCodeUsage {
  */
 export interface GenerateTextResponse {
   text: string;
-  usage: ClaudeCodeUsage;
+  usage: KoineUsage;
   sessionId: string;
 }
 
@@ -36,12 +36,12 @@ export interface GenerateTextResponse {
 export interface GenerateObjectResponse {
   object: unknown;
   rawText: string;
-  usage: ClaudeCodeUsage;
+  usage: KoineUsage;
   sessionId: string;
 }
 
 /**
- * Error response from Claude Code gateway service.
+ * Error response from Koine gateway service.
  */
 export interface ErrorResponse {
   error: string;
@@ -52,19 +52,19 @@ export interface ErrorResponse {
 /**
  * Result from streaming text generation.
  */
-export interface ClaudeCodeStreamResult {
+export interface KoineStreamResult {
   /** ReadableStream of text chunks as they arrive */
   textStream: ReadableStream<string>;
   /** Session ID for conversation continuity (resolves early in stream, after session event) */
   sessionId: Promise<string>;
   /** Usage stats (resolves when stream completes via result event) */
-  usage: Promise<ClaudeCodeUsage>;
+  usage: Promise<KoineUsage>;
   /** Full accumulated text (resolves when stream completes) */
   text: Promise<string>;
 }
 
 /**
- * SSE event types from Claude Code gateway /stream endpoint.
+ * SSE event types from Koine gateway /stream endpoint.
  */
 export interface SSETextEvent {
   text: string;
@@ -72,7 +72,7 @@ export interface SSETextEvent {
 
 export interface SSEResultEvent {
   sessionId: string;
-  usage: ClaudeCodeUsage;
+  usage: KoineUsage;
 }
 
 export interface SSEErrorEvent {

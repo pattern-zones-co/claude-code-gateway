@@ -1,15 +1,19 @@
-# Claude Code Gateway
+# Koine
 
-An HTTP gateway service that exposes [Claude Code CLI](https://github.com/anthropics/claude-code) as a REST API, plus a TypeScript SDK for easy integration.
+> The common language for your services.
+
+An HTTP gateway that exposes [Claude Code CLI](https://github.com/anthropics/claude-code) as a REST API, plus a TypeScript SDK for easy integration.
+
+Named after **Koine Greek** — the "common tongue" that connected the ancient Mediterranean — Koine sits between your clients and backends, translating protocols and managing requests so your services don't have to know about each other.
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| `@pattern-zones-co/claude-code-gateway` | HTTP gateway server wrapping Claude Code CLI |
-| `@pattern-zones-co/claude-code-gateway-sdk` | TypeScript SDK for gateway clients |
+| `@pattern-zones-co/koine` | HTTP gateway server wrapping Claude Code CLI |
+| `@pattern-zones-co/koine-sdk` | TypeScript SDK for gateway clients |
 
-> **⚠️ Terms of Use Warning**
+> **Terms of Use Warning**
 >
 > This gateway supports two authentication methods with different terms of service:
 >
@@ -20,7 +24,7 @@ An HTTP gateway service that exposes [Claude Code CLI](https://github.com/anthro
 
 ## Overview
 
-Claude Code Gateway provides:
+Koine provides:
 
 - **REST API endpoints** for text generation, object extraction, and streaming
 - **Session management** for multi-turn conversations
@@ -39,7 +43,7 @@ Claude Code Gateway provides:
                             │
                             ▼ HTTP REST API
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  Claude Code Gateway (this service)                                     │
+│  Koine (this service)                                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐│
 │  │ Core HTTP Server (Express)                                          ││
 │  │ - /generate-text    → Text generation                               ││
@@ -59,7 +63,7 @@ Claude Code Gateway provides:
 ## Project Structure
 
 ```
-claude-code-gateway/
+koine/
 ├── packages/
 │   ├── gateway/               # HTTP gateway server
 │   │   ├── src/
@@ -92,9 +96,9 @@ claude-code-gateway/
 ### Using the SDK
 
 ```typescript
-import { generateText, ClaudeCodeGatewayConfig } from '@pattern-zones-co/claude-code-gateway-sdk';
+import { generateText, KoineConfig } from '@pattern-zones-co/koine-sdk';
 
-const config: ClaudeCodeGatewayConfig = {
+const config: KoineConfig = {
   baseUrl: 'http://localhost:3100',
   timeout: 300000,
   authKey: 'your-api-key',
@@ -113,7 +117,7 @@ console.log(result.usage);
 ### Streaming
 
 ```typescript
-import { streamText } from '@pattern-zones-co/claude-code-gateway-sdk';
+import { streamText } from '@pattern-zones-co/koine-sdk';
 
 const result = await streamText(config, {
   prompt: 'Write a short story',
@@ -132,7 +136,7 @@ const usage = await result.usage;
 ### Structured Output
 
 ```typescript
-import { generateObject } from '@pattern-zones-co/claude-code-gateway-sdk';
+import { generateObject } from '@pattern-zones-co/koine-sdk';
 import { z } from 'zod';
 
 const PersonSchema = z.object({
@@ -327,14 +331,14 @@ curl http://localhost:3100/health
 
 ```bash
 # Build
-docker build -t claude-code-gateway .
+docker build -t koine .
 
 # Run
 docker run -d \
   -p 3100:3100 \
   -e CLAUDE_CODE_GATEWAY_API_KEY=your-api-key \
   -e ANTHROPIC_API_KEY=your-anthropic-key \
-  claude-code-gateway
+  koine
 ```
 
 ### Security Features

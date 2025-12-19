@@ -1,5 +1,5 @@
 {
-  "name": "@pattern-zones-co/claude-code-gateway",
+  "name": "@pattern-zones-co/koine",
   "version": "1.0.0",
   "private": true,
   "description": "HTTP gateway service for Claude Code CLI",

@@ -1,7 +1,7 @@
 {
-  "name": "@pattern-zones-co/claude-code-gateway-sdk",
+  "name": "@pattern-zones-co/koine-sdk",
   "version": "1.0.0",
-  "description": "TypeScript SDK for Claude Code Gateway",
+  "description": "TypeScript SDK for Koine gateway",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

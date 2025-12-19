@@ -1,9 +1,9 @@
 import type { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type {
-  ClaudeCodeGatewayConfig,
-  ClaudeCodeUsage,
-  ClaudeCodeStreamResult,
+  KoineConfig,
+  KoineUsage,
+  KoineStreamResult,
   GenerateTextResponse,
   GenerateObjectResponse,
   ErrorResponse,
@@ -11,7 +11,7 @@ import type {
   SSEResultEvent,
   SSEErrorEvent,
 } from "./types.js";
-import { ClaudeCodeError } from "./errors.js";
+import { KoineError } from "./errors.js";
 
 /**
  * Safely parses JSON from a response, handling non-JSON bodies gracefully.
@@ -26,10 +26,10 @@ async function safeJsonParse<T>(response: Response): Promise<T | null> {
 }
 
 /**
- * Generates plain text response from Claude Code gateway service.
+ * Generates plain text response from Koine gateway service.
  */
 export async function generateText(
-  config: ClaudeCodeGatewayConfig,
+  config: KoineConfig,
   options: {
     system?: string;
     prompt: string;
@@ -37,7 +37,7 @@ export async function generateText(
   },
 ): Promise<{
   text: string;
-  usage: ClaudeCodeUsage;
+  usage: KoineUsage;
   sessionId: string;
 }> {
   const response = await fetch(`${config.baseUrl}/generate-text`, {
@@ -57,7 +57,7 @@ export async function generateText(
 
   if (!response.ok) {
     const errorBody = await safeJsonParse<ErrorResponse>(response);
-    throw new ClaudeCodeError(
+    throw new KoineError(
       errorBody?.error || `HTTP ${response.status} ${response.statusText}`,
       errorBody?.code || "HTTP_ERROR",
       errorBody?.rawText,
@@ -66,8 +66,8 @@ export async function generateText(
 
   const result = await safeJsonParse<GenerateTextResponse>(response);
   if (!result) {
-    throw new ClaudeCodeError(
-      "Invalid response from Claude Code gateway: expected JSON",
+    throw new KoineError(
+      "Invalid response from Koine gateway: expected JSON",
       "INVALID_RESPONSE",
     );
   }
@@ -144,17 +144,17 @@ function createSSEParser(): TransformStream<
 }
 
 /**
- * Streams text response from Claude Code gateway service.
+ * Streams text response from Koine gateway service.
  * Returns a ReadableStream of text chunks that can be consumed as they arrive.
  */
 export async function streamText(
-  config: ClaudeCodeGatewayConfig,
+  config: KoineConfig,
   options: {
     system?: string;
     prompt: string;
     sessionId?: string;
   },
-): Promise<ClaudeCodeStreamResult> {
+): Promise<KoineStreamResult> {
   const response = await fetch(`${config.baseUrl}/stream`, {
     method: "POST",
     headers: {
@@ -172,7 +172,7 @@ export async function streamText(
 
   if (!response.ok) {
     const errorBody = await safeJsonParse<ErrorResponse>(response);
-    throw new ClaudeCodeError(
+    throw new KoineError(
       errorBody?.error || `HTTP ${response.status} ${response.statusText}`,
       errorBody?.code || "HTTP_ERROR",
       errorBody?.rawText,
@@ -180,8 +180,8 @@ export async function streamText(
   }
 
   if (!response.body) {
-    throw new ClaudeCodeError(
-      "No response body from Claude Code gateway",
+    throw new KoineError(
+      "No response body from Koine gateway",
       "NO_RESPONSE_BODY",
     );
   }
@@ -194,9 +194,9 @@ export async function streamText(
     rejectSessionId = reject;
   });
 
-  let resolveUsage: (value: ClaudeCodeUsage) => void;
+  let resolveUsage: (value: KoineUsage) => void;
   let rejectUsage: (error: Error) => void;
-  const usagePromise = new Promise<ClaudeCodeUsage>((resolve, reject) => {
+  const usagePromise = new Promise<KoineUsage>((resolve, reject) => {
     resolveUsage = resolve;
     rejectUsage = reject;
   });
@@ -250,7 +250,7 @@ export async function streamText(
             }
             case "error": {
               const parsed = JSON.parse(sseEvent.data) as SSEErrorEvent;
-              const error = new ClaudeCodeError(
+              const error = new KoineError(
                 parsed.error,
                 parsed.code || "STREAM_ERROR",
               );
@@ -272,7 +272,7 @@ export async function streamText(
         } catch (parseError) {
           if (isCriticalEvent) {
             // Critical event parse failure - propagate error
-            const error = new ClaudeCodeError(
+            const error = new KoineError(
               `Failed to parse critical SSE event: ${sseEvent.event}`,
               "SSE_PARSE_ERROR",
             );
@@ -293,7 +293,7 @@ export async function streamText(
         // Handle promises that were never resolved/rejected during stream
         if (!sessionIdReceived) {
           rejectSessionId(
-            new ClaudeCodeError(
+            new KoineError(
               "Stream ended without session ID",
               "NO_SESSION",
             ),
@@ -301,7 +301,7 @@ export async function streamText(
         }
         if (!usageReceived) {
           rejectUsage(
-            new ClaudeCodeError(
+            new KoineError(
               "Stream ended without usage information",
               "NO_USAGE",
             ),
@@ -321,11 +321,11 @@ export async function streamText(
 }
 
 /**
- * Generates structured JSON response from Claude Code gateway service.
+ * Generates structured JSON response from Koine gateway service.
  * Converts Zod schema to JSON Schema for the gateway service.
  */
 export async function generateObject<T>(
-  config: ClaudeCodeGatewayConfig,
+  config: KoineConfig,
   options: {
     system?: string;
     prompt: string;
@@ -335,7 +335,7 @@ export async function generateObject<T>(
 ): Promise<{
   object: T;
   rawText: string;
-  usage: ClaudeCodeUsage;
+  usage: KoineUsage;
   sessionId: string;
 }> {
   // Convert Zod schema to JSON Schema for the gateway service
@@ -362,7 +362,7 @@ export async function generateObject<T>(
 
   if (!response.ok) {
     const errorBody = await safeJsonParse<ErrorResponse>(response);
-    throw new ClaudeCodeError(
+    throw new KoineError(
       errorBody?.error || `HTTP ${response.status} ${response.statusText}`,
       errorBody?.code || "HTTP_ERROR",
       errorBody?.rawText,
@@ -371,8 +371,8 @@ export async function generateObject<T>(
 
   const result = await safeJsonParse<GenerateObjectResponse>(response);
   if (!result) {
-    throw new ClaudeCodeError(
-      "Invalid response from Claude Code gateway: expected JSON",
+    throw new KoineError(
+      "Invalid response from Koine gateway: expected JSON",
       "INVALID_RESPONSE",
     );
   }
@@ -380,7 +380,7 @@ export async function generateObject<T>(
   // Validate the response against the Zod schema
   const parseResult = options.schema.safeParse(result.object);
   if (!parseResult.success) {
-    throw new ClaudeCodeError(
+    throw new KoineError(
       `Response validation failed: ${parseResult.error.message}`,
       "VALIDATION_ERROR",
       result.rawText,

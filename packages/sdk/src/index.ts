@@ -1,13 +1,13 @@
 /**
- * Claude Code Gateway SDK
+ * Koine SDK
  *
- * A TypeScript client for interacting with Claude Code Gateway services.
+ * A TypeScript client for interacting with Koine gateway services.
  *
  * @example
  * ```typescript
- * import { generateText, ClaudeCodeGatewayConfig } from '@pattern-zones-co/claude-code-gateway-sdk';
+ * import { generateText, KoineConfig } from '@pattern-zones-co/koine-sdk';
  *
- * const config: ClaudeCodeGatewayConfig = {
+ * const config: KoineConfig = {
  *   baseUrl: 'http://localhost:3100',
  *   timeout: 300000,
  *   authKey: 'your-api-key',
@@ -24,9 +24,9 @@
 
 // Types
 export type {
-  ClaudeCodeGatewayConfig,
-  ClaudeCodeUsage,
-  ClaudeCodeStreamResult,
+  KoineConfig,
+  KoineUsage,
+  KoineStreamResult,
   GenerateTextResponse,
   GenerateObjectResponse,
   ErrorResponse,
@@ -36,7 +36,7 @@ export type {
 } from "./types.js";
 
 // Errors
-export { ClaudeCodeError } from "./errors.js";
+export { KoineError } from "./errors.js";
 
 // Client functions
 export { generateText, streamText, generateObject } from "./client.js";

@@ -1,4 +1,4 @@
-name: claude-code-gateway
+name: koine
 
 services:
   gateway:
@@ -19,7 +19,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
       # Named volume for Claude CLI data
-      - claude-code-data:/home/bun/.claude
+      - koine-data:/home/bun/.claude
       # WARNING: Bind-mounting ~/.claude is NOT SAFE for production.
       # It exposes credentials AND links all user-scoped Claude Code config
       # (slash commands, skills, MCP servers, etc.) which may be inappropriate.
@@ -44,4 +44,4 @@ services:
       retries: 3
 
 volumes:
-  claude-code-data:
+  koine-data:
