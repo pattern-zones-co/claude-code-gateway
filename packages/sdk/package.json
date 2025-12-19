@@ -1,0 +1,51 @@
+{
+  "name": "@pattern-zones-co/claude-code-gateway-sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for Claude Code Gateway with Zod-based type safety",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "peerDependencies": {
+    "zod": "^3.20.0"
+  },
+  "dependencies": {
+    "zod-to-json-schema": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "zod": "^3.25.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "llm",
+    "ai",
+    "sdk",
+    "typescript",
+    "zod"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pattern-zones-co/claude-code-gateway.git",
+    "directory": "packages/sdk"
+  }
+}
