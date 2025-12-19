@@ -247,4 +247,6 @@ pnpm test
 
 ## License
 
-TBD - See [LICENSE](./LICENSE) once added.
+Dual licensed under [AGPL-3.0](./LICENSE) and a commercial license.
+
+A commercial license is only required if you wish to keep your source code modifications private. Contact licensing@patternzones.co for commercial licensing.

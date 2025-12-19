@@ -45,7 +45,7 @@
     "gateway",
     "api"
   ],
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/pattern-zones-co/claude-code-gateway.git",

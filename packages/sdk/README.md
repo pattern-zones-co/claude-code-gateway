@@ -130,4 +130,4 @@ try {
 
 ## License
 
-See repository root.
+AGPL-3.0 or commercial. See [LICENSE](../../LICENSE) in repository root.
