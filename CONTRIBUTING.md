@@ -24,9 +24,12 @@ That's it. We'll figure out the details together.
 
 Looking for ideas? Here are improvements we'd love help with:
 
+- **Concurrency limits** - Limit concurrent CLI subprocesses to prevent resource exhaustion
+- **Request queuing** - Queue requests when concurrency limit is reached instead of rejecting
 - **Rate limiting** - Per-key request throttling
-- **Request queuing** - Handle concurrent requests gracefully
 - **Response caching** - Cache identical prompts
+- **Python SDK** - Port the TypeScript SDK to Python ([#2](https://github.com/pattern-zones-co/claude-code-gateway/issues/2))
+- **Docker Hardened Images** - Migrate to zero-CVE base images ([#1](https://github.com/pattern-zones-co/claude-code-gateway/issues/1))
 
 Have a different idea? Open an issue and let's discuss.
 
