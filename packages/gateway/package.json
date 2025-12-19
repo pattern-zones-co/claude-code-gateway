@@ -1,5 +1,5 @@
 {
-	"name": "@pattern-zones-co/koine",
+	"name": "@patternzones/koine",
 	"version": "1.0.0",
 	"description": "HTTP gateway service for Claude Code CLI",
 	"repository": {
@@ -28,7 +28,7 @@
 		"zod": "3.25.76"
 	},
 	"devDependencies": {
-		"@pattern-zones-co/koine-sdk": "workspace:*",
+		"@patternzones/koine-sdk": "workspace:*",
 		"@types/express": "5.0.6",
 		"@types/node": "25.0.2",
 		"@types/uuid": "10.0.0",

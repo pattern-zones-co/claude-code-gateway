@@ -1,5 +1,5 @@
 {
-	"name": "@pattern-zones-co/koine-sdk",
+	"name": "@patternzones/koine-sdk",
 	"version": "1.0.0",
 	"description": "TypeScript SDK for Koine gateway",
 	"repository": {
