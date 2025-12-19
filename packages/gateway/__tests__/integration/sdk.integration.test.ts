@@ -51,12 +51,14 @@ describe("SDK Integration Tests", () => {
 	const baseUrl = `http://localhost:${TEST_PORT}`;
 
 	// SDK functions (imported dynamically)
-	let generateText: typeof import("@pattern-zones-co/koine-sdk").generateText;
-	let generateObject: typeof import(
-		"@pattern-zones-co/koine-sdk",
-	).generateObject;
-	let streamText: typeof import("@pattern-zones-co/koine-sdk").streamText;
-	let KoineError: typeof import("@pattern-zones-co/koine-sdk").KoineError;
+	// biome-ignore lint/suspicious/noExplicitAny: assigned from dynamic import
+	let generateText: any;
+	// biome-ignore lint/suspicious/noExplicitAny: assigned from dynamic import
+	let generateObject: any;
+	// biome-ignore lint/suspicious/noExplicitAny: assigned from dynamic import
+	let streamText: any;
+	// biome-ignore lint/suspicious/noExplicitAny: assigned from dynamic import
+	let KoineError: any;
 
 	beforeAll(async () => {
 		// Import SDK
