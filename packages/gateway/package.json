@@ -1,5 +1,5 @@
 {
-	"name": "@pattern-zones-co/koine",
+	"name": "@patternzones/koine",
 	"version": "1.0.0",
 	"description": "HTTP gateway service for Claude Code CLI",
 	"repository": {
@@ -28,7 +28,7 @@
 		"zod": "3.25.76"
 	},
 	"devDependencies": {
-		"@pattern-zones-co/koine-sdk": "workspace:*",
+		"@patternzones/koine-sdk": "workspace:*",
 		"@types/express": "5.0.6",
 		"@types/node": "25.0.2",
 		"@types/uuid": "10.0.0",
@@ -40,8 +40,8 @@
 		"vitest": "3.2.4"
 	},
 	"engines": {
-		"node": ">=20",
-		"bun": ">=1.1"
+		"node": "22.21.1",
+		"bun": "1.3.3"
 	},
 	"keywords": ["claude", "claude-code", "anthropic", "ai", "gateway", "api"],
 	"license": "AGPL-3.0",

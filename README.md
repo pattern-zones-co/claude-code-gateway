@@ -8,8 +8,8 @@ An HTTP gateway that exposes [Claude Code CLI](https://github.com/anthropics/cla
 
 | Package | Description |
 |---------|-------------|
-| `@pattern-zones-co/koine` | HTTP gateway server wrapping Claude Code CLI |
-| `@pattern-zones-co/koine-sdk` | TypeScript SDK for gateway clients |
+| `@patternzones/koine` | HTTP gateway server wrapping Claude Code CLI |
+| `@patternzones/koine-sdk` | TypeScript SDK for gateway clients |
 
 > [!WARNING]
 > **Review Anthropic's Terms of Service**
@@ -96,7 +96,7 @@ koine/
 ### Using the SDK
 
 ```typescript
-import { generateText, KoineConfig } from '@pattern-zones-co/koine-sdk';
+import { generateText, KoineConfig } from '@patternzones/koine-sdk';
 
 const config: KoineConfig = {
   baseUrl: 'http://localhost:3100',
@@ -117,7 +117,7 @@ console.log(result.usage);
 ### Streaming
 
 ```typescript
-import { streamText } from '@pattern-zones-co/koine-sdk';
+import { streamText } from '@patternzones/koine-sdk';
 
 const result = await streamText(config, {
   prompt: 'Write a short story',
@@ -136,7 +136,7 @@ const usage = await result.usage;
 ### Structured Output
 
 ```typescript
-import { generateObject } from '@pattern-zones-co/koine-sdk';
+import { generateObject } from '@patternzones/koine-sdk';
 import { z } from 'zod';
 
 const PersonSchema = z.object({
