@@ -290,28 +290,27 @@ Health check endpoint (no authentication required).
 
 ### Prerequisites
 
-- Node.js >= 20 or Bun >= 1.1
-- pnpm (for workspace management)
+- Bun >= 1.1
 - Claude Code CLI installed (`bun install -g @anthropic-ai/claude-code`)
 
 ### Setup
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Set required environment variables
 cp .env.example .env
 # Edit .env with your values
 
 # Run gateway in development mode
-pnpm dev
+bun dev
 
 # Run tests
-pnpm test
+bun test
 
 # Build all packages
-pnpm build
+bun run build
 ```
 
 ## Docker Deployment
