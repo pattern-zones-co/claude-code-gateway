@@ -13,14 +13,15 @@ Named after **Koine Greek** — the "common tongue" that connected the ancient M
 | `@pattern-zones-co/koine` | HTTP gateway server wrapping Claude Code CLI |
 | `@pattern-zones-co/koine-sdk` | TypeScript SDK for gateway clients |
 
-> **Terms of Use Warning**
+> **Important: Review Anthropic's Terms of Service**
 >
-> This gateway supports two authentication methods with different terms of service:
+> This gateway supports two authentication methods for Claude CLI:
+> - **Subscription plans** (Claude Pro/Max) via OAuth token
+> - **API keys** via Anthropic API
 >
-> - **OAuth Token** (`CLAUDE_CODE_OAUTH_TOKEN`): For Claude Pro/Max subscribers. Subject to Anthropic's consumer subscription terms, which may have restrictions on automated or programmatic usage.
-> - **API Key** (`ANTHROPIC_API_KEY`): For Anthropic API customers. Subject to Anthropic's API terms of service, which are designed for programmatic access.
+> These have **different terms of use and allowable applications**. Subscription plans may have restrictions on commercial use, automation, or other use cases that do not apply to API key usage.
 >
-> **Users are responsible for reviewing and complying with [Anthropic's Terms of Use](https://www.anthropic.com/legal/consumer-terms) applicable to their chosen authentication method.**
+> **You are responsible for reviewing and complying with [Anthropic's Terms of Service](https://www.anthropic.com/legal/consumer-terms) and the specific terms of your subscription or API agreement before using this gateway.**
 
 ## Overview
 
