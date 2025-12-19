@@ -11,7 +11,7 @@
       },
     },
     "packages/gateway": {
-      "name": "@pattern-zones-co/koine",
+      "name": "@patternzones/koine",
       "version": "1.0.0",
       "dependencies": {
         "express": "4.22.1",
@@ -19,7 +19,7 @@
         "zod": "3.25.76",
       },
       "devDependencies": {
-        "@pattern-zones-co/koine-sdk": "workspace:*",
+        "@patternzones/koine-sdk": "workspace:*",
         "@types/express": "5.0.6",
         "@types/node": "25.0.2",
         "@types/supertest": "6.0.3",
@@ -32,7 +32,7 @@
       },
     },
     "packages/sdks/typescript": {
-      "name": "@pattern-zones-co/koine-sdk",
+      "name": "@patternzones/koine-sdk",
       "version": "1.0.0",
       "dependencies": {
         "zod": "3.25.76",
@@ -184,9 +184,9 @@
 
     "@paralleldrive/cuid2": ["@paralleldrive/cuid2@2.3.1", "", { "dependencies": { "@noble/hashes": "^1.1.5" } }, "sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw=="],
 
-    "@pattern-zones-co/koine": ["@pattern-zones-co/koine@workspace:packages/gateway"],
+    "@patternzones/koine": ["@patternzones/koine@workspace:packages/gateway"],
 
-    "@pattern-zones-co/koine-sdk": ["@pattern-zones-co/koine-sdk@workspace:packages/sdks/typescript"],
+    "@patternzones/koine-sdk": ["@patternzones/koine-sdk@workspace:packages/sdks/typescript"],
 
     "@pkgjs/parseargs": ["@pkgjs/parseargs@0.11.0", "", {}, "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="],
 
