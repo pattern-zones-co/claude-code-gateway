@@ -29,3 +29,6 @@ coverage/
 
 # pnpm
 .pnpm-store/
+
+# Shell history
+.histfile
