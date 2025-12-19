@@ -6,7 +6,6 @@ An HTTP gateway that exposes [Claude Code CLI](https://github.com/anthropics/cla
 
 Named after **Koine Greek** — the "common tongue" that connected the ancient Mediterranean — Koine sits between your clients and backends, translating protocols and managing requests so your services don't have to know about each other.
 
-[![codecov](https://codecov.io/gh/pattern-zones-co/koine/graph/badge.svg)](https://codecov.io/gh/pattern-zones-co/koine)
 ## Packages
 
 | Package | Description |
