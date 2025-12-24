@@ -14,9 +14,9 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"dev": "tsx watch src/index.ts",
+		"dev": "bun --env-file=../../.env tsx watch src/index.ts",
 		"build": "tsc",
-		"start": "bun run dist/index.js",
+		"start": "bun --env-file=../../.env run dist/index.js",
 		"lint": "biome check .",
 		"test": "vitest",
 		"test:run": "vitest run",
