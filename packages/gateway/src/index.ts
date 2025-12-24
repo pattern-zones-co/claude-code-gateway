@@ -1,18 +1,19 @@
 import { timingSafeEqual } from "node:crypto";
 import express, { type Application } from "express";
 import { logger } from "./logger.js";
+import docsRouter from "./routes/docs.js";
 import generateRouter from "./routes/generate.js";
 import healthRouter from "./routes/health.js";
 import streamRouter from "./routes/stream.js";
 
 const app: Application = express();
-const PORT = process.env.PORT || 3100;
-const WRAPPER_API_KEY = process.env.CLAUDE_CODE_WRAPPER_API_KEY;
+const PORT = process.env.PORT || process.env.GATEWAY_PORT || 3100;
+const GATEWAY_API_KEY = process.env.CLAUDE_CODE_GATEWAY_API_KEY;
 
-// Require API key for security - prevents accidental exposure of wrapper service
-if (!WRAPPER_API_KEY) {
+// Require API key for security - prevents accidental exposure of gateway service
+if (!GATEWAY_API_KEY) {
 	logger.error(
-		"CLAUDE_CODE_WRAPPER_API_KEY environment variable is required. " +
+		"CLAUDE_CODE_GATEWAY_API_KEY environment variable is required. " +
 			"Generate one with: openssl rand -hex 32",
 	);
 	process.exit(1);
@@ -21,10 +22,14 @@ if (!WRAPPER_API_KEY) {
 // Middleware
 app.use(express.json({ limit: "10mb" }));
 
-// API key authentication (required for all routes except health check)
+// API key authentication (required for all routes except health check and docs)
 app.use((req, res, next) => {
-	// Skip auth for health check
-	if (req.path === "/health") {
+	// Skip auth for health check and documentation
+	if (
+		req.path === "/health" ||
+		req.path === "/docs" ||
+		req.path === "/openapi.yaml"
+	) {
 		next();
 		return;
 	}
@@ -39,7 +44,7 @@ app.use((req, res, next) => {
 
 	// Use timing-safe comparison to prevent timing attacks
 	const tokenBuffer = Buffer.from(token);
-	const apiKeyBuffer = Buffer.from(WRAPPER_API_KEY);
+	const apiKeyBuffer = Buffer.from(GATEWAY_API_KEY);
 	const isValid =
 		tokenBuffer.length === apiKeyBuffer.length &&
 		timingSafeEqual(tokenBuffer, apiKeyBuffer);
@@ -60,6 +65,7 @@ app.use((req, _res, next) => {
 
 // Routes
 app.use(healthRouter);
+app.use(docsRouter);
 app.use(generateRouter);
 app.use(streamRouter);
 

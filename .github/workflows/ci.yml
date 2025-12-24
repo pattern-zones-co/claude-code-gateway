@@ -38,6 +38,15 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Check OpenAPI spec is up to date
+        run: |
+          bun run --filter @patternzones/koine openapi:generate
+          if ! git diff --quiet docs/openapi.yaml; then
+            echo "Error: OpenAPI spec is out of date. Run 'bun run --filter @patternzones/koine openapi:generate' and commit the changes."
+            git diff docs/openapi.yaml
+            exit 1
+          fi
+
       - name: Test with coverage
         run: bun run test:coverage
 
