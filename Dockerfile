@@ -34,7 +34,8 @@ RUN bun run build
 WORKDIR /app
 
 # Re-install with production deps only
-RUN rm -rf node_modules packages/gateway/node_modules && bun install --production
+# --ignore-scripts: skip prepare script (husky) since it's a dev dependency
+RUN rm -rf node_modules packages/gateway/node_modules && bun install --production --ignore-scripts
 
 # ----- Stage 2: Runtime -----
 FROM oven/bun:1.3.3-slim
