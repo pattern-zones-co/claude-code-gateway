@@ -6,12 +6,13 @@ import { Router } from "express";
 const router = Router();
 
 // Resolve path relative to dist directory (compiled output)
+// Cache at module load to avoid disk I/O on every request
 const specPath = resolve(__dirname, "../../../../docs/openapi.yaml");
+const specCache = readFileSync(specPath, "utf-8");
 
 // Serve raw OpenAPI spec
 router.get("/openapi.yaml", (_req, res) => {
-	const spec = readFileSync(specPath, "utf-8");
-	res.type("text/yaml").send(spec);
+	res.type("text/yaml").send(specCache);
 });
 
 // Serve Scalar API reference
