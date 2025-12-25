@@ -1,6 +1,6 @@
 # Koine
 
-An HTTP gateway that exposes [Claude Code CLI](https://github.com/anthropics/claude-code) as a REST API, plus a TypeScript SDK for easy integration.
+An HTTP gateway that exposes [Claude Code CLI](https://github.com/anthropics/claude-code) as a REST API, plus TypeScript and Python SDKs for easy integration.
 
 > **Koine** (pronounced /kɔɪˈneɪ/, "koy-NAY") — named after the common Greek dialect that connected the ancient Mediterranean. Koine translates protocols and manages requests so your apps can use Claude Code CLI just like you.
 
@@ -59,7 +59,7 @@ See [Docker Deployment](docs/docker-deployment.md) for version pinning, docker-c
 |-------|-------------|
 | [Getting Started](docs/README.md) | Installation and setup |
 | [API Reference](docs/api-reference.md) | REST endpoints |
-| [SDK Guide](docs/sdk-guide.md) | TypeScript SDK |
+| [SDK Guide](docs/sdk-guide.md) | TypeScript & Python SDKs |
 | [Docker Deployment](docs/docker-deployment.md) | Production deployment |
 | [Skills & Commands](docs/skills-and-commands.md) | Extending Claude Code |
 | [Environment Variables](docs/environment-variables.md) | Configuration |
@@ -71,6 +71,7 @@ See [Docker Deployment](docs/docker-deployment.md) for version pinning, docker-c
 |---------|-------------|
 | [koine](packages/gateway) | HTTP gateway (Docker only, not on npm) |
 | [@patternzones/koine-sdk](https://www.npmjs.com/package/@patternzones/koine-sdk) | TypeScript SDK |
+| [koine-sdk](https://pypi.org/project/koine-sdk/) | Python SDK |
 
 ## License
 

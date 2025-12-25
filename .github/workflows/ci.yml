@@ -50,9 +50,29 @@ jobs:
       - name: Test with coverage
         run: bun run test:coverage
 
+      # Python SDK
+      - name: Setup Python and uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "packages/sdks/python/uv.lock"
+
+      - name: Install and lint Python SDK
+        working-directory: packages/sdks/python
+        run: |
+          uv sync --frozen --all-extras
+          uv run ruff check
+          uv run ruff format --check
+          uv run pyright
+
+      - name: Test Python SDK
+        working-directory: packages/sdks/python
+        run: uv run pytest --cov=koine_sdk --cov-report=lcov:coverage/lcov.info
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/gateway/coverage/lcov.info,packages/sdks/typescript/coverage/lcov.info
+          files: packages/gateway/coverage/lcov.info,packages/sdks/typescript/coverage/lcov.info,packages/sdks/python/coverage/lcov.info
           fail_ci_if_error: false

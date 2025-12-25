@@ -32,7 +32,7 @@ Husky runs automatic checks on every commit. The following tools are strongly re
 - **actionlint** - GitHub workflow validation
 - **hadolint** - Dockerfile linting
 - **ripsecrets** - Secret scanning
-- **ruff** - Python linting (for future Python SDK)
+- **ruff** - Python linting (for Python SDK)
 
 Hooks skip gracefully if tools aren't installed, but CI will catch issues you miss locally.
 
@@ -57,7 +57,7 @@ Looking for ideas? Here are improvements we'd love help with:
 - **Request queuing** - Queue requests when concurrency limit is reached instead of rejecting
 - **Rate limiting** - Per-key request throttling
 - **Response caching** - Cache identical prompts
-- **Python SDK** - Port the TypeScript SDK to Python ([#2](https://github.com/pattern-zones-co/koine/issues/2))
+- ~~**Python SDK** - Port the TypeScript SDK to Python ([#2](https://github.com/pattern-zones-co/koine/issues/2))~~ ✅ Done!
 - **Docker Hardened Images** - Migrate to zero-CVE base images ([#1](https://github.com/pattern-zones-co/koine/issues/1))
 
 Have a different idea? Open an issue and let's discuss.

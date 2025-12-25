@@ -35,4 +35,20 @@ bun run docs/examples/typescript/conversation.ts
 
 ## Python Examples
 
-Coming soon.
+Using `koine-sdk`. First install the SDK with dev dependencies, then run from the SDK directory:
+
+```bash
+cd packages/sdks/python
+uv pip install -e ".[dev]"
+uv run python ../../../docs/examples/python/hello.py
+uv run python ../../../docs/examples/python/extract_recipe.py
+uv run python ../../../docs/examples/python/stream.py
+uv run python ../../../docs/examples/python/conversation.py
+```
+
+| Example | Description |
+|---------|-------------|
+| `hello.py` | Basic `generate_text` usage |
+| `extract_recipe.py` | Structured output with Pydantic schemas |
+| `stream.py` | Real-time streaming with `stream_text` |
+| `conversation.py` | Multi-turn conversations with `session_id` |

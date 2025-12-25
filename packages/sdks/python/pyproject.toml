@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "koine-sdk"
+version = "1.1.5"
+description = "Python SDK for Koine gateway"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "Pattern Zones Co" }]
+keywords = ["claude", "claude-code", "anthropic", "ai", "sdk", "gateway"]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Intended Audience :: Developers",
+	"Framework :: AsyncIO",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Typing :: Typed",
+]
+dependencies = ["httpx==0.28.1", "pydantic==2.12.5"]
+
+[project.optional-dependencies]
+dev = [
+	"pytest==9.0.2",
+	"pytest-asyncio==1.3.0",
+	"pytest-httpx==0.36.0",
+	"pytest-cov==7.0.0",
+	"pyright==1.1.407",
+	"python-dotenv==1.2.1",
+	"ruff==0.14.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/pattern-zones-co/koine"
+Repository = "https://github.com/pattern-zones-co/koine.git"
+Issues = "https://github.com/pattern-zones-co/koine/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/koine_sdk"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+include = ["src"]
+exclude = ["tests"]
+reportUnusedClass = false
