@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/pattern-zones-co/koine/compare/v1.1.6...v2.0.0) (2025-12-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* stream_text now returns a context manager instead of a coroutine. Must use `async with stream_text(...)` instead of `await stream_text(...)`.
+
+### Features
+
+* Python SDK for Koine gateway ([#42](https://github.com/pattern-zones-co/koine/issues/42)) ([65ef9b7](https://github.com/pattern-zones-co/koine/commit/65ef9b7b2e6af2f89bc94ca18d46a6424d0dcec2))
+
+
+### Bug Fixes
+
+* **ci:** improve issue triage workflow and disable PR review ([#44](https://github.com/pattern-zones-co/koine/issues/44)) ([be4f1e2](https://github.com/pattern-zones-co/koine/commit/be4f1e2fad7277e10caca1fc0a9bcaff4d54fd67))
+
 ## [1.1.6](https://github.com/pattern-zones-co/koine/compare/v1.1.5...v1.1.6) (2025-12-25)
 
 
