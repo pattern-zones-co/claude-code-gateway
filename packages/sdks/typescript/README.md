@@ -16,7 +16,8 @@ See [Docker Deployment](https://github.com/pattern-zones-co/koine/blob/main/docs
 ## Installation
 
 ```bash
-npm install @patternzones/koine-sdk
+bun add @patternzones/koine-sdk
+# or: npm install @patternzones/koine-sdk
 ```
 
 ## Quick Start

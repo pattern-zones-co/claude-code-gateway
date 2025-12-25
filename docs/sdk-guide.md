@@ -5,13 +5,15 @@
 ### TypeScript
 
 ```bash
-npm install @patternzones/koine-sdk
+bun add @patternzones/koine-sdk
+# or: npm install @patternzones/koine-sdk
 ```
 
 ### Python
 
 ```bash
-pip install koine-sdk
+uv pip install koine-sdk
+# or: pip install koine-sdk
 ```
 
 ## Configuration
@@ -32,7 +34,7 @@ const config: KoineConfig = {
 ### Python
 
 ```python
-from koine_sdk import KoineConfig
+from koine_sdk import KoineConfig, create_koine
 
 config = KoineConfig(
     base_url="http://localhost:3100",
@@ -40,6 +42,8 @@ config = KoineConfig(
     timeout=300.0,  # optional, default 5 min
     model="sonnet",  # optional default model
 )
+
+koine = create_koine(config)
 ```
 
 ## Text Generation
@@ -63,10 +67,7 @@ console.log(result.sessionId);
 ### Python
 
 ```python
-from koine_sdk import generate_text
-
-result = await generate_text(
-    config,
+result = await koine.generate_text(
     prompt="Explain quantum computing",
     system="You are a helpful teacher",  # optional
     session_id="continue-conversation",  # optional
@@ -99,9 +100,7 @@ const usage = await result.usage;
 ### Python
 
 ```python
-from koine_sdk import stream_text
-
-async with stream_text(config, prompt="Write a short story") as result:
+async with koine.stream_text(prompt="Write a short story") as result:
     async for chunk in result.text_stream:
         print(chunk, end="", flush=True)
 
@@ -135,15 +134,13 @@ console.log(result.object);  // typed as { name: string, age: number, email: str
 
 ```python
 from pydantic import BaseModel
-from koine_sdk import generate_object
 
 class Person(BaseModel):
     name: str
     age: int
     email: str
 
-result = await generate_object(
-    config,
+result = await koine.generate_object(
     prompt="Extract: John is 30, email john@example.com",
     schema=Person,
 )
@@ -171,10 +168,10 @@ try {
 ### Python
 
 ```python
-from koine_sdk import KoineError, generate_text
+from koine_sdk import KoineError
 
 try:
-    result = await generate_text(config, prompt="Hello")
+    result = await koine.generate_text(prompt="Hello")
 except KoineError as e:
     print(f"Error [{e.code}]: {e}")
     if e.raw_text:
@@ -196,9 +193,8 @@ const result2 = await generateText(config, {
 ### Python
 
 ```python
-result1 = await generate_text(config, prompt="My name is Alice")
-result2 = await generate_text(
-    config,
+result1 = await koine.generate_text(prompt="My name is Alice")
+result2 = await koine.generate_text(
     prompt="What is my name?",
     session_id=result1.session_id,
 )

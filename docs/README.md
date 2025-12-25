@@ -51,7 +51,8 @@ curl -X POST http://localhost:3100/generate-text \
 #### TypeScript SDK
 
 ```bash
-npm install @patternzones/koine-sdk
+bun add @patternzones/koine-sdk
+# or: npm install @patternzones/koine-sdk
 ```
 
 ```typescript
@@ -68,11 +69,12 @@ console.log(result.text);
 #### Python SDK
 
 ```bash
-pip install koine-sdk
+uv pip install koine-sdk
+# or: pip install koine-sdk
 ```
 
 ```python
-from koine_sdk import generate_text, KoineConfig
+from koine_sdk import KoineConfig, create_koine
 
 config = KoineConfig(
     base_url="http://localhost:3100",
@@ -80,7 +82,8 @@ config = KoineConfig(
     timeout=300.0,
 )
 
-result = await generate_text(config, prompt="Hello!")
+koine = create_koine(config)
+result = await koine.generate_text(prompt="Hello!")
 print(result.text)
 ```
 
