@@ -22,14 +22,15 @@ npm install @patternzones/koine-sdk
 ## Quick Start
 
 ```typescript
-import { generateText, KoineConfig } from '@patternzones/koine-sdk';
+import { createKoine } from '@patternzones/koine-sdk';
 
-const config: KoineConfig = {
+const koine = createKoine({
   baseUrl: 'http://localhost:3100',
   authKey: 'your-api-key',
-};
+  timeout: 300000, // 5 minutes
+});
 
-const result = await generateText(config, {
+const result = await koine.generateText({
   prompt: 'Hello, how are you?',
 });
 
@@ -39,32 +40,40 @@ console.log(result.text);
 ## Features
 
 - **Text Generation** — `generateText()` for simple prompts
-- **Streaming** — `streamText()` with async iterators
+- **Streaming** — `streamText()` with ReadableStream (async iterable)
 - **Structured Output** — `generateObject()` with Zod schema validation
+- **Cancellation** — AbortSignal support for all requests
 - **Type Safety** — Full TypeScript types for all requests and responses
-- **Error Handling** — `KoineError` class with status codes
+- **Error Handling** — `KoineError` class with typed error codes
 
 ## API
 
-### Functions
+### Client Factory
 
-| Function | Description |
-|----------|-------------|
-| `generateText(config, request)` | Generate text from a prompt |
-| `streamText(config, request)` | Stream text via Server-Sent Events |
-| `generateObject(config, request)` | Extract structured data using a Zod schema |
+```typescript
+const koine = createKoine(config);
+```
+
+Creates a client instance with the given configuration. The config is validated once at creation time.
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `koine.generateText(options)` | Generate text from a prompt |
+| `koine.streamText(options)` | Stream text via Server-Sent Events |
+| `koine.generateObject(options)` | Extract structured data using a Zod schema |
 
 ### Types
 
 | Type | Description |
 |------|-------------|
 | `KoineConfig` | Client configuration (baseUrl, authKey, timeout, model) |
-| `GenerateTextRequest` | Text generation request options |
-| `GenerateTextResponse` | Text generation response with usage stats |
-| `GenerateObjectRequest` | Object extraction request with Zod schema |
-| `GenerateObjectResponse` | Object extraction response |
-| `KoineStreamResult` | Streaming result with async iterators |
-| `KoineError` | Error class with status and code |
+| `KoineClient` | Client interface returned by `createKoine()` |
+| `KoineUsage` | Token usage stats (inputTokens, outputTokens, totalTokens) |
+| `KoineStreamResult` | Streaming result with ReadableStream and promises |
+| `KoineError` | Error class with typed `code` property |
+| `KoineErrorCode` | Union type of all possible error codes |
 
 ## Documentation
 
