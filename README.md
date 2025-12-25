@@ -37,7 +37,7 @@ Claude Code is that orchestration layer:
 
 ### Who It's For
 
-- **Solo founders** who use Claude Code daily and want to build products with it
+- **Solo founders** who use Claude Code daily and want to use it in toolchains
 - **Backend developers** adding AI capabilities to services and APIs
 - **AI tinkerers** building agentic workflows, automation, and experiments
 - **Data engineers** who need structured, typed LLM output in pipelines
@@ -61,8 +61,11 @@ curl -X POST http://localhost:3100/generate-text \
 
 See [Docker Deployment](docs/docker-deployment.md) for docker-compose, version pinning, and production configuration.
 
-## Features
+## Built for Integrations
 
+- **Interactive API docs** — Scalar-powered docs at `/docs`
+- **OpenAPI spec** — generate clients for any language
+- **Runnable examples** — copy-paste and go
 - **Text generation** — simple prompts to full responses
 - **Streaming** — real-time Server-Sent Events
 - **Structured output** — type-safe extraction with Zod/Pydantic schemas
@@ -70,14 +73,6 @@ See [Docker Deployment](docs/docker-deployment.md) for docker-compose, version p
 - **TypeScript & Python SDKs** — full type safety and async support
 - **Extensible** — add custom [skills and slash commands](docs/skills-and-commands.md)
 - **Docker-first** — containerized deployment with security isolation
-
-## Developer Experience
-
-- **Type-safe SDKs** — TypeScript with Zod, Python with Pydantic
-- **Structured output** — extract typed objects, not just strings
-- **Interactive API docs** — Scalar-powered docs at `/docs`
-- **OpenAPI spec** — generate clients for any language
-- **Runnable examples** — copy-paste and go
 
 ## SDK Usage
 
