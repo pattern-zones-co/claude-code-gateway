@@ -6,7 +6,7 @@ HTTP gateway + SDKs that expose [Claude Code CLI](https://github.com/anthropics/
 [![PyPI](https://img.shields.io/pypi/v/koine-sdk)](https://pypi.org/project/koine-sdk/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0%20%2F%20Commercial-blue)](LICENSE)
 
-> **Koine** (koy-NAY, /kɔɪˈneɪ/) — the common Greek that connected the ancient Mediterranean. Koine connects your apps to Claude Code.
+> **Koine** (koy-NAY) — the common Greek that connected the ancient Mediterranean. Koine connects your apps to Claude Code.
 
 ## Why Koine?
 
