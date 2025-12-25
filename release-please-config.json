@@ -8,7 +8,13 @@
 			"include-component-in-tag": false,
 			"extra-files": [
 				"packages/gateway/package.json",
-				"packages/sdks/typescript/package.json"
+				"packages/sdks/typescript/package.json",
+				{
+					"type": "toml",
+					"path": "packages/sdks/python/pyproject.toml",
+					"jsonpath": "$.project.version"
+				},
+				"packages/sdks/python/src/koine_sdk/__init__.py"
 			]
 		}
 	},

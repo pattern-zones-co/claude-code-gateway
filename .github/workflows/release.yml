@@ -47,6 +47,12 @@ jobs:
       - name: Format with Biome
         run: bunx @biomejs/biome@1.9.4 format --write .
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Format Python SDK with Ruff
+        run: uvx ruff@0.14.10 format packages/sdks/python
+
       - name: Commit formatting changes
         run: |
           git config user.name "github-actions[bot]"
@@ -183,3 +189,28 @@ jobs:
       - name: Publish to npm
         run: npm publish --access public --provenance
         working-directory: packages/sdks/typescript
+
+  publish-pypi:
+    needs: [release-please, ci-checks]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Build distribution
+        run: uv build
+        working-directory: packages/sdks/python
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/sdks/python/dist/
