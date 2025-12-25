@@ -96,10 +96,9 @@ router.post("/stream", async (req: Request, res: Response) => {
 			res.write(message);
 
 			// Flush if available (compression middleware compatibility)
-			if (
-				typeof (res as unknown as { flush?: () => void }).flush === "function"
-			) {
-				(res as unknown as { flush: () => void }).flush();
+			const flushable = res as { flush?: () => void };
+			if (flushable.flush) {
+				flushable.flush();
 			}
 
 			return true;
