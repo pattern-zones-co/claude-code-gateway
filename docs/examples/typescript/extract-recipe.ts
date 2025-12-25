@@ -35,8 +35,6 @@ const RecipeSchema = z.object({
 	cookTime: z.number().describe("Cooking time in minutes"),
 });
 
-type Recipe = z.infer<typeof RecipeSchema>;
-
 async function main() {
 	console.log("Extracting recipe from natural language...\n");
 
