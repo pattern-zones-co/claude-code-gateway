@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/pattern-zones-co/koine/compare/v1.1.5...v1.1.6) (2025-12-25)
+
+
+### Bug Fixes
+
+* **docker:** consolidate dev service into single build+image service ([#35](https://github.com/pattern-zones-co/koine/issues/35)) ([84d7f60](https://github.com/pattern-zones-co/koine/commit/84d7f60b5c199b458bf035e320ce1ae58724fc3f))
+
 ## [1.1.5](https://github.com/pattern-zones-co/koine/compare/v1.1.4...v1.1.5) (2025-12-25)
 
 
