@@ -5,6 +5,6 @@ Currently supports HTTP/SSE transport, with future support planned
 for WebSocket and other transport mechanisms.
 """
 
-from .http import stream_text
+from .sse import stream_text
 
 __all__ = ["stream_text"]

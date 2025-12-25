@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from .http import validate_config
 from .object import GenerateObjectResult, generate_object
 from .stream import stream_text
-from .stream.http import HTTPStreamContext
+from .stream.sse import HTTPStreamContext
 from .text import GenerateTextResult, generate_text
 from .types import KoineConfig
 
