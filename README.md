@@ -63,7 +63,7 @@ See [Docker Deployment](docs/docker-deployment.md) for docker-compose, version p
 
 ## Built for Integrations
 
-- **Interactive API docs** — Scalar-powered docs at `/docs`
+- **Interactive API docs** — Scalar-powered docs at `/docs` (Default: http://localhost:3100/docs)
 - **OpenAPI spec** — generate clients for any language
 - **Runnable examples** — copy-paste and go
 - **Text generation** — simple prompts to full responses
