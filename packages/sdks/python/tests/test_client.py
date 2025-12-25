@@ -278,19 +278,18 @@ class TestStreamText:
             headers={"content-type": "text/event-stream"},
         )
 
-        result = await stream_text(config, prompt="Say hello")
+        async with stream_text(config, prompt="Say hello") as result:
+            chunks = []
+            async for chunk in result.text_stream:
+                chunks.append(chunk)
 
-        chunks = []
-        async for chunk in result.text_stream:
-            chunks.append(chunk)
+            assert chunks == ["Hello", ", world!"]
+            assert await result.session_id() == "stream-session"
+            assert await result.text() == "Hello, world!"
 
-        assert chunks == ["Hello", ", world!"]
-        assert await result.session_id() == "stream-session"
-        assert await result.text() == "Hello, world!"
-
-        usage = await result.usage()
-        assert usage.input_tokens == 5
-        assert usage.output_tokens == 3
+            usage = await result.usage()
+            assert usage.input_tokens == 5
+            assert usage.output_tokens == 3
 
     async def test_session_id_early(self, httpx_mock: HTTPXMock, config: KoineConfig):
         usage = {"inputTokens": 1, "outputTokens": 1, "totalTokens": 2}
@@ -309,19 +308,18 @@ class TestStreamText:
             headers={"content-type": "text/event-stream"},
         )
 
-        result = await stream_text(config, prompt="test")
+        async with stream_text(config, prompt="test") as result:
+            # Start iteration but don't consume fully
+            stream = result.text_stream.__aiter__()
+            first_chunk = await stream.__anext__()
 
-        # Start iteration but don't consume fully
-        stream = result.text_stream.__aiter__()
-        first_chunk = await stream.__anext__()
+            # Session ID should be available after first chunk
+            assert first_chunk == "Hello"
+            assert await result.session_id() == "early-session"
 
-        # Session ID should be available after first chunk
-        assert first_chunk == "Hello"
-        assert await result.session_id() == "early-session"
-
-        # Consume rest
-        async for _ in stream:
-            pass
+            # Consume rest
+            async for _ in stream:
+                pass
 
     async def test_stream_error_event(self, httpx_mock: HTTPXMock, config: KoineConfig):
         sse_data = self._sse_response(
@@ -338,20 +336,19 @@ class TestStreamText:
             headers={"content-type": "text/event-stream"},
         )
 
-        result = await stream_text(config, prompt="test")
+        async with stream_text(config, prompt="test") as result:
+            with pytest.raises(KoineError) as exc_info:
+                async for _ in result.text_stream:
+                    pass
 
-        with pytest.raises(KoineError) as exc_info:
-            async for _ in result.text_stream:
-                pass
+            assert exc_info.value.code == "RATE_LIMIT"
+            assert "Rate limit exceeded" in str(exc_info.value)
 
-        assert exc_info.value.code == "RATE_LIMIT"
-        assert "Rate limit exceeded" in str(exc_info.value)
-
-        # Consume the futures to avoid "Future exception was never retrieved" warning
-        with pytest.raises(KoineError):
-            await result.usage()
-        with pytest.raises(KoineError):
-            await result.text()
+            # Consume futures to avoid "Future exception was never retrieved" warning
+            with pytest.raises(KoineError):
+                await result.usage()
+            with pytest.raises(KoineError):
+                await result.text()
 
     async def test_http_error(self, httpx_mock: HTTPXMock, config: KoineConfig):
         httpx_mock.add_response(
@@ -361,7 +358,8 @@ class TestStreamText:
         )
 
         with pytest.raises(KoineError) as exc_info:
-            await stream_text(config, prompt="test")
+            async with stream_text(config, prompt="test"):
+                pass
 
         assert exc_info.value.code == "UNAUTHORIZED"
 
@@ -381,18 +379,17 @@ class TestStreamText:
             headers={"content-type": "text/event-stream"},
         )
 
-        result = await stream_text(config, prompt="test")
+        async with stream_text(config, prompt="test") as result:
+            chunks = []
+            async for chunk in result.text_stream:
+                chunks.append(chunk)
 
-        chunks = []
-        async for chunk in result.text_stream:
-            chunks.append(chunk)
-
-        # Text should still be accumulated
-        assert await result.text() == "Partial response"
-        # But usage should fail
-        with pytest.raises(KoineError) as exc_info:
-            await result.usage()
-        assert exc_info.value.code == "NO_USAGE"
+            # Text should still be accumulated
+            assert await result.text() == "Partial response"
+            # But usage should fail
+            with pytest.raises(KoineError) as exc_info:
+                await result.usage()
+            assert exc_info.value.code == "NO_USAGE"
 
     async def test_request_includes_params(
         self, httpx_mock: HTTPXMock, config: KoineConfig
@@ -412,15 +409,14 @@ class TestStreamText:
             headers={"content-type": "text/event-stream"},
         )
 
-        result = await stream_text(
+        async with stream_text(
             config,
             prompt="test prompt",
             system="system prompt",
             session_id="existing-session",
-        )
-
-        async for _ in result.text_stream:
-            pass
+        ) as result:
+            async for _ in result.text_stream:
+                pass
 
         request = httpx_mock.get_request()
         assert request is not None
@@ -446,9 +442,9 @@ class TestStreamText:
             headers={"content-type": "text/event-stream"},
         )
 
-        result = await stream_text(config, prompt="test")
-        async for _ in result.text_stream:
-            pass
+        async with stream_text(config, prompt="test") as result:
+            async for _ in result.text_stream:
+                pass
 
         request = httpx_mock.get_request()
         assert request is not None

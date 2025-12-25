@@ -3,6 +3,7 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from types import TracebackType
 from typing import Any, TypeVar
 
 import httpx
@@ -308,16 +309,105 @@ async def _process_sse_stream(
             text_future.set_result(accumulated_text)
 
 
-async def stream_text(
+class _StreamTextContext:
+    """Async context manager for streaming text responses.
+
+    Handles resource cleanup (HTTP client and response) automatically.
+    """
+
+    def __init__(
+        self,
+        config: KoineConfig,
+        prompt: str,
+        system: str | None,
+        session_id: str | None,
+    ) -> None:
+        self._config = config
+        self._prompt = prompt
+        self._system = system
+        self._session_id = session_id
+        self._client: httpx.AsyncClient | None = None
+        self._response: httpx.Response | None = None
+
+    async def __aenter__(self) -> StreamTextResult:
+        """Set up the streaming connection and return the result."""
+        self._client = httpx.AsyncClient(timeout=self._config.timeout)
+
+        self._response = await self._client.send(
+            self._client.build_request(
+                "POST",
+                f"{self._config.base_url}/stream",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self._config.auth_key}",
+                },
+                json=_build_request_body(
+                    system=self._system,
+                    prompt=self._prompt,
+                    sessionId=self._session_id,
+                    model=self._config.model,
+                ),
+            ),
+            stream=True,
+        )
+
+        if not self._response.is_success:
+            await self._response.aread()
+            await self._client.aclose()
+            raise _parse_error_response(self._response)
+
+        loop = asyncio.get_running_loop()
+        session_id_future: asyncio.Future[str] = loop.create_future()
+        usage_future: asyncio.Future[KoineUsage] = loop.create_future()
+        text_future: asyncio.Future[str] = loop.create_future()
+
+        response = self._response  # Capture for closure
+
+        async def text_stream_generator() -> AsyncIterator[str]:
+            async for text_chunk in _process_sse_stream(
+                response,
+                session_id_future,
+                usage_future,
+                text_future,
+            ):
+                yield text_chunk
+
+        return StreamTextResult(
+            text_stream=text_stream_generator(),
+            _session_id_future=session_id_future,
+            _usage_future=usage_future,
+            _text_future=text_future,
+        )
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        """Clean up HTTP resources."""
+        if self._response is not None:
+            await self._response.aclose()
+        if self._client is not None:
+            await self._client.aclose()
+
+
+def stream_text(
     config: KoineConfig,
     *,
     prompt: str,
     system: str | None = None,
     session_id: str | None = None,
-) -> StreamTextResult:
+) -> _StreamTextContext:
     """Stream text response from Koine gateway service.
 
-    Returns a StreamTextResult with:
+    Must be used as an async context manager to ensure proper resource cleanup:
+
+        async with stream_text(config, prompt="Hello") as result:
+            async for chunk in result.text_stream:
+                print(chunk)
+
+    The result provides:
     - text_stream: AsyncIterator of text chunks as they arrive
     - session_id(): Resolves early in stream
     - usage(): Resolves when stream completes
@@ -332,60 +422,9 @@ async def stream_text(
         session_id: Optional session ID for conversation continuity
 
     Returns:
-        StreamTextResult for streaming consumption
+        Async context manager that yields StreamTextResult
 
     Raises:
         KoineError: On HTTP errors or stream errors
     """
-    # Create the HTTP client - we keep it open for streaming
-    client = httpx.AsyncClient(timeout=config.timeout)
-
-    response = await client.send(
-        client.build_request(
-            "POST",
-            f"{config.base_url}/stream",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {config.auth_key}",
-            },
-            json=_build_request_body(
-                system=system,
-                prompt=prompt,
-                sessionId=session_id,
-                model=config.model,
-            ),
-        ),
-        stream=True,
-    )
-
-    if not response.is_success:
-        await response.aread()
-        await client.aclose()
-        raise _parse_error_response(response)
-
-    # Set up futures for session, usage, and accumulated text
-    loop = asyncio.get_running_loop()
-    session_id_future: asyncio.Future[str] = loop.create_future()
-    usage_future: asyncio.Future[KoineUsage] = loop.create_future()
-    text_future: asyncio.Future[str] = loop.create_future()
-
-    # Create the text stream generator
-    async def text_stream_generator() -> AsyncIterator[str]:
-        try:
-            async for text_chunk in _process_sse_stream(
-                response,
-                session_id_future,
-                usage_future,
-                text_future,
-            ):
-                yield text_chunk
-        finally:
-            await response.aclose()
-            await client.aclose()
-
-    return StreamTextResult(
-        text_stream=text_stream_generator(),
-        _session_id_future=session_id_future,
-        _usage_future=usage_future,
-        _text_future=text_future,
-    )
+    return _StreamTextContext(config, prompt, system, session_id)

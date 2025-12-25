@@ -101,13 +101,12 @@ const usage = await result.usage;
 ```python
 from koine_sdk import stream_text
 
-result = await stream_text(config, prompt="Write a short story")
+async with stream_text(config, prompt="Write a short story") as result:
+    async for chunk in result.text_stream:
+        print(chunk, end="", flush=True)
 
-async for chunk in result.text_stream:
-    print(chunk, end="", flush=True)
-
-full_text = await result.text()
-usage = await result.usage()
+    full_text = await result.text()
+    usage = await result.usage()
 ```
 
 ## Structured Output

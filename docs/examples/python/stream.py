@@ -32,28 +32,27 @@ async def main() -> None:
 
     print("Streaming response:\n")
 
-    result = await stream_text(
+    async with stream_text(
         config,
         prompt=(
             "Write a limerick about a programmer who loves coffee. "
             "Just the limerick, no explanation."
         ),
-    )
+    ) as result:
+        # Display text in real-time as chunks arrive
+        chunk_count = 0
+        async for chunk in result.text_stream:
+            print(chunk, end="", flush=True)  # Print immediately (no newline)
+            chunk_count += 1
 
-    # Display text in real-time as chunks arrive
-    chunk_count = 0
-    async for chunk in result.text_stream:
-        print(chunk, end="", flush=True)  # Print immediately (no newline)
-        chunk_count += 1
-
-    # Wait for final stats
-    usage = await result.usage()
-    suffix = "s" if chunk_count != 1 else ""
-    print(f"\n\n--- Streamed in {chunk_count} chunk{suffix} ---")
-    print(
-        f"Usage: {usage.total_tokens} tokens "
-        f"(input: {usage.input_tokens}, output: {usage.output_tokens})"
-    )
+        # Wait for final stats
+        usage = await result.usage()
+        suffix = "s" if chunk_count != 1 else ""
+        print(f"\n\n--- Streamed in {chunk_count} chunk{suffix} ---")
+        print(
+            f"Usage: {usage.total_tokens} tokens "
+            f"(input: {usage.input_tokens}, output: {usage.output_tokens})"
+        )
 
 
 if __name__ == "__main__":
