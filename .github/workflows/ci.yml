@@ -51,26 +51,22 @@ jobs:
         run: bun run test:coverage
 
       # Python SDK
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Python and uv
+        uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "packages/sdks/python/uv.lock"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Install Python SDK dependencies
-        working-directory: packages/sdks/python
-        run: uv sync --frozen --all-extras
-
-      - name: Lint Python SDK
+      - name: Install and lint Python SDK
         working-directory: packages/sdks/python
         run: |
+          uv sync --frozen --all-extras
           uv run ruff check
           uv run ruff format --check
           uv run pyright
 
-      - name: Test Python SDK with coverage
+      - name: Test Python SDK
         working-directory: packages/sdks/python
         run: uv run pytest --cov=koine_sdk --cov-report=lcov:coverage/lcov.info
 
