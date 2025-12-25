@@ -90,18 +90,19 @@ class StreamTextResult:
 
 
 # Internal response types for parsing gateway responses
+# These are not exported in __init__.py but are used across package modules
 
 
-class _GenerateTextResponse(BaseModel):
-    """Response from generate-text endpoint."""
+class GatewayTextResponse(BaseModel):
+    """Response from generate-text endpoint (internal)."""
 
     text: str
     usage: KoineUsage
     sessionId: str
 
 
-class _GenerateObjectResponse(BaseModel):
-    """Response from generate-object endpoint."""
+class GatewayObjectResponse(BaseModel):
+    """Response from generate-object endpoint (internal)."""
 
     object: object
     rawText: str
@@ -109,35 +110,35 @@ class _GenerateObjectResponse(BaseModel):
     sessionId: str
 
 
-class _ErrorResponse(BaseModel):
-    """Error response from Koine gateway service."""
+class GatewayErrorResponse(BaseModel):
+    """Error response from Koine gateway service (internal)."""
 
     error: str
     code: str
     rawText: str | None = None
 
 
-class _SSETextEvent(BaseModel):
-    """SSE text event from stream endpoint."""
+class SSETextEvent(BaseModel):
+    """SSE text event from stream endpoint (internal)."""
 
     text: str
 
 
-class _SSESessionEvent(BaseModel):
-    """SSE session event from stream endpoint."""
+class SSESessionEvent(BaseModel):
+    """SSE session event from stream endpoint (internal)."""
 
     sessionId: str
 
 
-class _SSEResultEvent(BaseModel):
-    """SSE result event from stream endpoint."""
+class SSEResultEvent(BaseModel):
+    """SSE result event from stream endpoint (internal)."""
 
     sessionId: str
     usage: KoineUsage
 
 
-class _SSEErrorEvent(BaseModel):
-    """SSE error event from stream endpoint."""
+class SSEErrorEvent(BaseModel):
+    """SSE error event from stream endpoint (internal)."""
 
     error: str
     code: str | None = None
