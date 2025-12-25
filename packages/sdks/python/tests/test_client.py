@@ -122,6 +122,27 @@ class TestGenerateText:
 
         assert exc_info.value.code == "INVALID_RESPONSE"
 
+    async def test_with_session_id(self, httpx_mock: HTTPXMock, config: KoineConfig):
+        httpx_mock.add_response(
+            url="http://localhost:3100/generate-text",
+            json={
+                "text": "Continued response",
+                "usage": {"inputTokens": 10, "outputTokens": 5, "totalTokens": 15},
+                "sessionId": "continued-session",
+            },
+        )
+
+        await generate_text(
+            config,
+            prompt="Continue the conversation",
+            session_id="existing-session",
+        )
+
+        request = httpx_mock.get_request()
+        assert request is not None
+        body = json.loads(request.content)
+        assert body["sessionId"] == "existing-session"
+
 
 class TestGenerateObject:
     class Person(BaseModel):

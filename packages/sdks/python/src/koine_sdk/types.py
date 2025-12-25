@@ -3,12 +3,9 @@
 import asyncio
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    pass  # For forward references
 
 T = TypeVar("T")
 

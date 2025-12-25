@@ -37,7 +37,7 @@ def _parse_error_response(response: httpx.Response) -> KoineError:
             error_resp.code,
             error_resp.rawText,
         )
-    except Exception:
+    except (json.JSONDecodeError, ValidationError):
         return KoineError(
             f"HTTP {response.status_code} {response.reason_phrase}",
             "HTTP_ERROR",
@@ -236,7 +236,6 @@ async def _process_sse_stream(
         Text chunks as they arrive
     """
     accumulated_text = ""
-    session_id_received = False
 
     try:
         async for event_type, data in _parse_sse_stream(response):
@@ -246,8 +245,7 @@ async def _process_sse_stream(
             try:
                 if event_type == "session":
                     parsed = SSESessionEvent.model_validate(json.loads(data))
-                    if not session_id_received:
-                        session_id_received = True
+                    if not session_id_future.done():
                         session_id_future.set_result(parsed.sessionId)
 
                 elif event_type == "text":
@@ -258,8 +256,7 @@ async def _process_sse_stream(
                 elif event_type == "result":
                     parsed = SSEResultEvent.model_validate(json.loads(data))
                     usage_future.set_result(parsed.usage)
-                    if not session_id_received:
-                        session_id_received = True
+                    if not session_id_future.done():
                         session_id_future.set_result(parsed.sessionId)
 
                 elif event_type == "error":
@@ -273,7 +270,7 @@ async def _process_sse_stream(
                         usage_future.set_exception(error)
                     if not text_future.done():
                         text_future.set_exception(error)
-                    if not session_id_received:
+                    if not session_id_future.done():
                         session_id_future.set_exception(error)
                     raise error
 
@@ -282,7 +279,7 @@ async def _process_sse_stream(
                     if not text_future.done():
                         text_future.set_result(accumulated_text)
 
-            except json.JSONDecodeError as e:
+            except (json.JSONDecodeError, ValidationError) as e:
                 if is_critical:
                     error = KoineError(
                         f"Failed to parse critical SSE event: {event_type}",

@@ -12,7 +12,6 @@ class KoineError(Exception):
         SSE_PARSE_ERROR: Failed to parse SSE event
         NO_SESSION: Stream ended without session ID
         NO_USAGE: Stream ended without usage info
-        NO_RESPONSE_BODY: No response body from gateway
     """
 
     def __init__(self, message: str, code: str, raw_text: str | None = None) -> None:
