@@ -3,7 +3,7 @@
 | Guide | Description |
 |-------|-------------|
 | [API Reference](api-reference.md) | REST endpoints |
-| [SDK Guide](sdk-guide.md) | TypeScript SDK |
+| [SDK Guide](sdk-guide.md) | TypeScript & Python SDKs |
 | [Examples](examples/) | Runnable SDK examples |
 | [Docker Deployment](docker-deployment.md) | Production deployment |
 | [Skills & Commands](skills-and-commands.md) | Extending Claude Code |
@@ -63,6 +63,25 @@ const result = await generateText(
 );
 
 console.log(result.text);
+```
+
+#### Python SDK
+
+```bash
+pip install koine-sdk
+```
+
+```python
+from koine_sdk import generate_text, KoineConfig
+
+config = KoineConfig(
+    base_url="http://localhost:3100",
+    auth_key="your-api-key",
+    timeout=300.0,
+)
+
+result = await generate_text(config, prompt="Hello!")
+print(result.text)
 ```
 
 See the [SDK Guide](sdk-guide.md) for streaming and structured output.

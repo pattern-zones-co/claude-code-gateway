@@ -2,11 +2,21 @@
 
 ## Installation
 
+### TypeScript
+
 ```bash
 npm install @patternzones/koine-sdk
 ```
 
+### Python
+
+```bash
+pip install koine-sdk
+```
+
 ## Configuration
+
+### TypeScript
 
 ```typescript
 import { KoineConfig } from '@patternzones/koine-sdk';
@@ -19,7 +29,22 @@ const config: KoineConfig = {
 };
 ```
 
+### Python
+
+```python
+from koine_sdk import KoineConfig
+
+config = KoineConfig(
+    base_url="http://localhost:3100",
+    auth_key="your-api-key",
+    timeout=300.0,  # optional, default 5 min
+    model="sonnet",  # optional default model
+)
+```
+
 ## Text Generation
+
+### TypeScript
 
 ```typescript
 import { generateText } from '@patternzones/koine-sdk';
@@ -35,7 +60,26 @@ console.log(result.usage);
 console.log(result.sessionId);
 ```
 
+### Python
+
+```python
+from koine_sdk import generate_text
+
+result = await generate_text(
+    config,
+    prompt="Explain quantum computing",
+    system="You are a helpful teacher",  # optional
+    session_id="continue-conversation",  # optional
+)
+
+print(result.text)
+print(result.usage)
+print(result.session_id)
+```
+
 ## Streaming
+
+### TypeScript
 
 ```typescript
 import { streamText } from '@patternzones/koine-sdk';
@@ -52,7 +96,23 @@ const fullText = await result.text;
 const usage = await result.usage;
 ```
 
+### Python
+
+```python
+from koine_sdk import stream_text
+
+result = await stream_text(config, prompt="Write a short story")
+
+async for chunk in result.text_stream:
+    print(chunk, end="", flush=True)
+
+full_text = await result.text()
+usage = await result.usage()
+```
+
 ## Structured Output
+
+### TypeScript
 
 ```typescript
 import { generateObject } from '@patternzones/koine-sdk';
@@ -72,7 +132,30 @@ const result = await generateObject(config, {
 console.log(result.object);  // typed as { name: string, age: number, email: string }
 ```
 
+### Python
+
+```python
+from pydantic import BaseModel
+from koine_sdk import generate_object
+
+class Person(BaseModel):
+    name: str
+    age: int
+    email: str
+
+result = await generate_object(
+    config,
+    prompt="Extract: John is 30, email john@example.com",
+    schema=Person,
+)
+
+print(result.object)  # typed as Person
+print(result.object.name, result.object.age)
+```
+
 ## Error Handling
+
+### TypeScript
 
 ```typescript
 import { KoineError } from '@patternzones/koine-sdk';
@@ -86,7 +169,22 @@ try {
 }
 ```
 
+### Python
+
+```python
+from koine_sdk import KoineError, generate_text
+
+try:
+    result = await generate_text(config, prompt="Hello")
+except KoineError as e:
+    print(f"Error [{e.code}]: {e}")
+    if e.raw_text:
+        print(f"Raw response: {e.raw_text}")
+```
+
 ## Multi-turn Conversations
+
+### TypeScript
 
 ```typescript
 const result1 = await generateText(config, { prompt: 'My name is Alice' });
@@ -96,7 +194,20 @@ const result2 = await generateText(config, {
 });
 ```
 
+### Python
+
+```python
+result1 = await generate_text(config, prompt="My name is Alice")
+result2 = await generate_text(
+    config,
+    prompt="What is my name?",
+    session_id=result1.session_id,
+)
+```
+
 ## Runnable Examples
+
+### TypeScript
 
 See [docs/examples/typescript/](examples/typescript/) for complete, runnable examples:
 
@@ -104,3 +215,12 @@ See [docs/examples/typescript/](examples/typescript/) for complete, runnable exa
 - `extract-recipe.ts` — Structured output with Zod schemas
 - `stream.ts` — Real-time streaming
 - `conversation.ts` — Multi-turn session persistence
+
+### Python
+
+See [docs/examples/python/](examples/python/) for complete, runnable examples:
+
+- `hello.py` — Basic text generation
+- `extract_recipe.py` — Structured output with Pydantic schemas
+- `stream.py` — Real-time streaming
+- `conversation.py` — Multi-turn session persistence

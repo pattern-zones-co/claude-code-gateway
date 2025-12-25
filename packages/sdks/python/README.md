@@ -1,6 +1,17 @@
-# Koine Python SDK
+# koine-sdk
 
-Async Python client for [Koine](https://github.com/pattern-zones-co/koine) gateway services.
+Python SDK for [Koine](https://github.com/pattern-zones-co/koine) — the HTTP gateway for Claude Code CLI.
+
+## Running the Gateway
+
+```bash
+docker run -d -p 3100:3100 \
+  -e CLAUDE_CODE_GATEWAY_API_KEY=your-key \
+  -e CLAUDE_CODE_OAUTH_TOKEN=your-token \
+  ghcr.io/pattern-zones-co/koine:latest
+```
+
+See [Docker Deployment](https://github.com/pattern-zones-co/koine/blob/main/docs/docker-deployment.md) for version pinning and production setup.
 
 ## Installation
 
@@ -16,12 +27,12 @@ from koine_sdk import KoineConfig, generate_text
 
 config = KoineConfig(
     base_url="http://localhost:3100",
-    timeout=300.0,
     auth_key="your-api-key",
+    timeout=300.0,
 )
 
 async def main():
-    result = await generate_text(config, prompt="What is 2 + 2?")
+    result = await generate_text(config, prompt="Hello, how are you?")
     print(result.text)
 
 asyncio.run(main())
@@ -29,102 +40,56 @@ asyncio.run(main())
 
 ## Features
 
-### Text Generation
+- **Text Generation** — `generate_text()` for simple prompts
+- **Streaming** — `stream_text()` with async iterators
+- **Structured Output** — `generate_object()` with Pydantic schema validation
+- **Type Safety** — Full type hints for all requests and responses
+- **Error Handling** — `KoineError` class with error codes
 
-```python
-from koine_sdk import generate_text
-
-result = await generate_text(
-    config,
-    prompt="Explain quantum computing",
-    system="You are a helpful assistant",
-)
-print(result.text)
-print(f"Tokens: {result.usage.total_tokens}")
-```
-
-### Streaming
-
-```python
-from koine_sdk import stream_text
-
-result = await stream_text(config, prompt="Write a story")
-
-async for chunk in result.text_stream:
-    print(chunk, end="", flush=True)
-
-usage = await result.usage()
-print(f"\nTokens: {usage.total_tokens}")
-```
-
-### Structured Output
-
-```python
-from pydantic import BaseModel
-from koine_sdk import generate_object
-
-class Recipe(BaseModel):
-    name: str
-    ingredients: list[str]
-    steps: list[str]
-
-result = await generate_object(
-    config,
-    prompt="Give me a recipe for chocolate chip cookies",
-    schema=Recipe,
-)
-print(result.object.name)
-print(result.object.ingredients)
-```
-
-### Multi-turn Conversations
-
-```python
-# First message
-result1 = await generate_text(config, prompt="My name is Alice")
-
-# Continue conversation
-result2 = await generate_text(
-    config,
-    prompt="What's my name?",
-    session_id=result1.session_id,
-)
-```
-
-## Error Handling
-
-```python
-from koine_sdk import KoineError
-
-try:
-    result = await generate_text(config, prompt="Hello")
-except KoineError as e:
-    print(f"Error [{e.code}]: {e}")
-    if e.raw_text:
-        print(f"Raw response: {e.raw_text}")
-```
-
-Error codes: `HTTP_ERROR`, `INVALID_RESPONSE`, `VALIDATION_ERROR`, `STREAM_ERROR`, `SSE_PARSE_ERROR`, `NO_SESSION`, `NO_USAGE`
-
-## API Reference
-
-### Configuration
-
-```python
-@dataclass
-class KoineConfig:
-    base_url: str        # Gateway URL (e.g., "http://localhost:3100")
-    timeout: float       # Request timeout in seconds
-    auth_key: str        # Authentication key
-    model: str | None    # Optional model alias (e.g., "sonnet", "haiku")
-```
+## API
 
 ### Functions
 
-- `generate_text(config, *, prompt, system?, session_id?)` - Text generation
-- `stream_text(config, *, prompt, system?, session_id?)` - Streaming text
-- `generate_object(config, *, prompt, schema, system?, session_id?)` - Structured output
+| Function | Description |
+|----------|-------------|
+| `generate_text(config, *, prompt, system?, session_id?)` | Generate text from a prompt |
+| `stream_text(config, *, prompt, system?, session_id?)` | Stream text via Server-Sent Events |
+| `generate_object(config, *, prompt, schema, system?, session_id?)` | Extract structured data using a Pydantic model |
+
+### Types
+
+| Type | Description |
+|------|-------------|
+| `KoineConfig` | Client configuration (base_url, auth_key, timeout, model) |
+| `GenerateTextResult` | Text generation response with usage stats |
+| `GenerateObjectResult[T]` | Object extraction response (generic over schema) |
+| `StreamTextResult` | Streaming result with async iterators and futures |
+| `KoineUsage` | Token usage information |
+| `KoineError` | Error class with code and raw_text |
+
+## Documentation
+
+See the [SDK Guide](https://github.com/pattern-zones-co/koine/blob/main/docs/sdk-guide.md) for:
+
+- Configuration options
+- Streaming examples
+- Structured output with Pydantic
+- Error handling
+- Multi-turn conversations
+
+## Examples
+
+Runnable examples are available in [docs/examples/python/](https://github.com/pattern-zones-co/koine/tree/main/docs/examples/python):
+
+```bash
+cd packages/sdks/python
+uv pip install -e ".[dev]"
+uv run python ../../../docs/examples/python/hello.py           # Basic text generation
+uv run python ../../../docs/examples/python/extract_recipe.py  # Structured output with Pydantic
+uv run python ../../../docs/examples/python/stream.py          # Real-time streaming
+uv run python ../../../docs/examples/python/conversation.py    # Multi-turn sessions
+```
 
 ## License
 
-MIT
+Dual-licensed under [AGPL-3.0 or commercial license](https://github.com/pattern-zones-co/koine/blob/main/LICENSE).

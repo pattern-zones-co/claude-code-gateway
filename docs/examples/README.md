@@ -35,13 +35,15 @@ bun run docs/examples/typescript/conversation.ts
 
 ## Python Examples
 
-Using `koine-sdk`. Run from the project root:
+Using `koine-sdk`. First install the SDK with dev dependencies, then run from the SDK directory:
 
 ```bash
-uv run docs/examples/python/hello.py
-uv run docs/examples/python/extract_recipe.py
-uv run docs/examples/python/stream.py
-uv run docs/examples/python/conversation.py
+cd packages/sdks/python
+uv pip install -e ".[dev]"
+uv run python ../../../docs/examples/python/hello.py
+uv run python ../../../docs/examples/python/extract_recipe.py
+uv run python ../../../docs/examples/python/stream.py
+uv run python ../../../docs/examples/python/conversation.py
 ```
 
 | Example | Description |
