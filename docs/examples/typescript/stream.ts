@@ -5,7 +5,7 @@
  * Displays chunk count to prove streaming is working.
  *
  * Run from project root:
- *   bun run docs/examples/stream.ts
+ *   bun run docs/examples/typescript/stream.ts
  */
 
 import {

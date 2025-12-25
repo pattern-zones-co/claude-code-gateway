@@ -4,7 +4,7 @@
  * Demonstrates the simplest use case: asking a question and getting a text response.
  *
  * Run from project root:
- *   bun run docs/examples/hello.ts
+ *   bun run docs/examples/typescript/hello.ts
  */
 
 import {

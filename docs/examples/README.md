@@ -1,6 +1,6 @@
 # SDK Examples
 
-These examples demonstrate how to use the `@patternzones/koine-sdk` TypeScript client.
+Examples demonstrating how to use Koine SDKs.
 
 ## Prerequisites
 
@@ -15,28 +15,24 @@ These examples demonstrate how to use the `@patternzones/koine-sdk` TypeScript c
    GATEWAY_PORT=3100  # optional, defaults to 3100
    ```
 
-## Running Examples
+## TypeScript Examples
 
-Run from the project root directory:
+Using `@patternzones/koine-sdk`. Run from the project root:
 
 ```bash
-# Basic text generation
-bun run docs/examples/hello.ts
-
-# Structured data extraction with Zod
-bun run docs/examples/extract-recipe.ts
-
-# Real-time streaming
-bun run docs/examples/stream.ts
+bun run docs/examples/typescript/hello.ts
+bun run docs/examples/typescript/extract-recipe.ts
+bun run docs/examples/typescript/stream.ts
+bun run docs/examples/typescript/conversation.ts
 ```
 
-## Examples
+| Example | Description |
+|---------|-------------|
+| `hello.ts` | Basic `generateText` usage |
+| `extract-recipe.ts` | Structured output with Zod schemas |
+| `stream.ts` | Real-time streaming with `streamText` |
+| `conversation.ts` | Multi-turn conversations with `sessionId` |
 
-### hello.ts
-Basic `generateText` usage. Asks a simple question and displays the response with token usage.
+## Python Examples
 
-### extract-recipe.ts
-Uses `generateObject` with a Zod schema to extract structured recipe data from natural language. Demonstrates type-safe output validation.
-
-### stream.ts
-Uses `streamText` to show real-time streaming. Text appears as the model generates it, with a chunk counter to demonstrate streaming is working.
+Coming soon.
