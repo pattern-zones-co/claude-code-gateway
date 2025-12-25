@@ -56,3 +56,4 @@ pythonVersion = "3.11"
 typeCheckingMode = "strict"
 include = ["src"]
 exclude = ["tests"]
+reportUnusedClass = false
