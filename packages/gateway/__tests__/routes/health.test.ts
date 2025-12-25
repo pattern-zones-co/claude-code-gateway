@@ -16,11 +16,14 @@ function afterSpawnCalled(
 	mockSpawn: ReturnType<typeof vi.fn>,
 	callback: () => void,
 ): void {
+	let iterations = 0;
 	const check = () => {
 		if (mockSpawn.mock.calls.length > 0) {
 			callback();
-		} else {
+		} else if (iterations++ < 1000) {
 			setTimeout(check, 1);
+		} else {
+			throw new Error("Timeout waiting for spawn to be called");
 		}
 	};
 	check();
