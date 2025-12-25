@@ -62,6 +62,12 @@ router.post("/stream", async (req: Request, res: Response) => {
 	res.setHeader("X-Accel-Buffering", "no");
 	res.flushHeaders(); // Important: send headers immediately for SSE
 
+	// Disable Nagle's algorithm for immediate write transmission
+	// This prevents TCP from batching small writes together
+	if (res.socket) {
+		res.socket.setNoDelay(true);
+	}
+
 	// Track response state to prevent writes after close
 	let isResponseClosed = false;
 	let timeoutId: NodeJS.Timeout | undefined;
@@ -85,8 +91,17 @@ router.post("/stream", async (req: Request, res: Response) => {
 			return false;
 		}
 		try {
-			res.write(`event: ${event}\n`);
-			res.write(`data: ${JSON.stringify(data)}\n\n`);
+			// Combine into single write for efficiency
+			const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+			res.write(message);
+
+			// Flush if available (compression middleware compatibility)
+			if (
+				typeof (res as unknown as { flush?: () => void }).flush === "function"
+			) {
+				(res as unknown as { flush: () => void }).flush();
+			}
+
 			return true;
 		} catch (error) {
 			logger.error("Failed to write SSE event", {
