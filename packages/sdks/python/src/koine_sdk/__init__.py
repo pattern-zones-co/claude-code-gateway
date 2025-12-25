@@ -17,7 +17,9 @@ Example:
     print(result.text)
 """
 
-__version__ = "2.0.0"
+# x-release-please-start-version
+__version__ = "1.1.6"
+# x-release-please-end
 
 # Client factory (primary API)
 from .client import KoineClient, create_koine
