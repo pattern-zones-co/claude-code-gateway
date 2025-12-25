@@ -16,14 +16,15 @@ See [Docker Deployment](https://github.com/pattern-zones-co/koine/blob/main/docs
 ## Installation
 
 ```bash
-pip install koine-sdk
+uv pip install koine-sdk
+# or: pip install koine-sdk
 ```
 
 ## Quick Start
 
 ```python
 import asyncio
-from koine_sdk import KoineConfig, generate_text
+from koine_sdk import KoineConfig, create_koine
 
 config = KoineConfig(
     base_url="http://localhost:3100",
@@ -32,7 +33,8 @@ config = KoineConfig(
 )
 
 async def main():
-    result = await generate_text(config, prompt="Hello, how are you?")
+    koine = create_koine(config)
+    result = await koine.generate_text(prompt="Hello, how are you?")
     print(result.text)
 
 asyncio.run(main())
@@ -40,27 +42,36 @@ asyncio.run(main())
 
 ## Features
 
-- **Text Generation** — `generate_text()` for simple prompts
-- **Streaming** — `stream_text()` with async iterators
-- **Structured Output** — `generate_object()` with Pydantic schema validation
+- **Text Generation** — `koine.generate_text()` for simple prompts
+- **Streaming** — `koine.stream_text()` with async iterators
+- **Structured Output** — `koine.generate_object()` with Pydantic schema validation
 - **Type Safety** — Full type hints for all requests and responses
 - **Error Handling** — `KoineError` class with error codes
 
 ## API
 
-### Functions
+### Client Factory
 
-| Function | Description |
-|----------|-------------|
-| `generate_text(config, *, prompt, system?, session_id?)` | Generate text from a prompt |
-| `stream_text(config, *, prompt, system?, session_id?)` | Stream text via Server-Sent Events |
-| `generate_object(config, *, prompt, schema, system?, session_id?)` | Extract structured data using a Pydantic model |
+```python
+koine = create_koine(config)
+```
+
+Creates a client instance with the given configuration. The config is validated once at creation time.
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `koine.generate_text(*, prompt, system?, session_id?)` | Generate text from a prompt |
+| `koine.stream_text(*, prompt, system?, session_id?)` | Stream text via Server-Sent Events |
+| `koine.generate_object(*, prompt, schema, system?, session_id?)` | Extract structured data using a Pydantic model |
 
 ### Types
 
 | Type | Description |
 |------|-------------|
 | `KoineConfig` | Client configuration (base_url, auth_key, timeout, model) |
+| `KoineClient` | Client interface returned by `create_koine()` |
 | `GenerateTextResult` | Text generation response with usage stats |
 | `GenerateObjectResult[T]` | Object extraction response (generic over schema) |
 | `StreamTextResult` | Streaming result with async iterators and futures |

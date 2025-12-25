@@ -35,11 +35,25 @@ koine/
 │   │           ├── generate.ts      # /generate-text, /generate-object
 │   │           ├── stream.ts        # /stream (SSE)
 │   │           └── health.ts        # /health
-│   └── sdks/typescript/             # TypeScript SDK
-│       └── src/
-│           ├── client.ts            # generateText, streamText, generateObject
-│           ├── types.ts             # Type definitions
-│           └── errors.ts            # KoineError
+│   └── sdks/
+│       ├── typescript/              # TypeScript SDK
+│       │   └── src/
+│       │       ├── index.ts         # Public exports
+│       │       ├── client.ts        # createKoine factory, KoineClient
+│       │       ├── text.ts          # generateText implementation
+│       │       ├── object.ts        # generateObject implementation
+│       │       ├── stream/          # streamText implementation (SSE)
+│       │       ├── types.ts         # Type definitions
+│       │       └── errors.ts        # KoineError
+│       └── python/                  # Python SDK
+│           └── src/koine_sdk/
+│               ├── __init__.py      # Public exports
+│               ├── client.py        # create_koine factory, KoineClient
+│               ├── text.py          # generate_text implementation
+│               ├── object.py        # generate_object implementation
+│               ├── stream/          # stream_text implementation (SSE)
+│               ├── types.py         # Type definitions
+│               └── errors.py        # KoineError
 ├── claude-assets/                   # Skills and commands
 ├── docs/
 ├── Dockerfile
