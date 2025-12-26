@@ -15,7 +15,7 @@
 ```bash
 docker run -d -p 3100:3100 \
   -e CLAUDE_CODE_GATEWAY_API_KEY=your-key \
-  -e CLAUDE_CODE_OAUTH_TOKEN=your-token \
+  -e ANTHROPIC_API_KEY=your-anthropic-api-key \
   ghcr.io/pattern-zones-co/koine:latest
 
 curl http://localhost:3100/health

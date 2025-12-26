@@ -49,7 +49,7 @@ Claude Code is that orchestration layer:
 # Start the gateway
 docker run -d -p 3100:3100 \
   -e CLAUDE_CODE_GATEWAY_API_KEY=your-gateway-key \
-  -e CLAUDE_CODE_OAUTH_TOKEN=your-claude-token \
+  -e ANTHROPIC_API_KEY=your-anthropic-api-key \
   ghcr.io/pattern-zones-co/koine:latest
 
 # Make your first request
@@ -101,11 +101,10 @@ console.log(result.text);
 >
 > - **Use Docker**: containers provide essential filesystem and process isolation
 > - **Internal networks only**: deploy on VPN or Docker networks, not public internet
-> - **Know your auth method**:
->   - *API keys* (Anthropic API): pay-per-token, suitable for automation
->   - *OAuth tokens* (Claude Pro/Max): subscription plans may restrict commercial use and automation; review [Anthropic's Consumer Terms](https://www.anthropic.com/legal/consumer-terms)
+> - **Use API keys for automation**: Anthropic API keys are the recommended authentication method. They operate under the [Commercial Terms](https://www.anthropic.com/legal/commercial-terms) which permit programmatic access.
+> - **OAuth tokens for personal use only**: Claude Pro/Max OAuth tokens are appropriate for personal testing and development. For production or shared deployments, use an API key.
 >
-> **You are responsible for compliance with Anthropic's Terms of Service.**
+> See [Environment Variables](docs/environment-variables.md#terms-considerations) for details.
 
 ## Documentation
 
