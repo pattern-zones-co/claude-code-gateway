@@ -68,6 +68,7 @@ export const errorCodeSchema = z.enum([
 	"CLI_EXIT_ERROR",
 	"SPAWN_ERROR",
 	"PARSE_ERROR",
+	"CONCURRENCY_LIMIT_ERROR",
 ]);
 
 export const errorResponseSchema = z.object({
@@ -76,11 +77,22 @@ export const errorResponseSchema = z.object({
 	rawText: z.string().optional(),
 });
 
+const concurrencyPoolSchema = z.object({
+	active: z.number(),
+	limit: z.number(),
+});
+
 export const healthResponseSchema = z.object({
 	status: z.enum(["healthy", "unhealthy"]),
 	claudeCli: z.enum(["available", "unavailable"]),
 	timestamp: z.string(),
 	error: z.string().optional(),
+	concurrency: z
+		.object({
+			streaming: concurrencyPoolSchema,
+			nonStreaming: concurrencyPoolSchema,
+		})
+		.optional(),
 });
 
 // Response types (derived from schemas)
