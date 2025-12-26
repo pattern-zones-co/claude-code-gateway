@@ -8,7 +8,11 @@
 import { spawn } from "node:child_process";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createCliResultJson, createMockChildProcess } from "../helpers.js";
+import {
+	afterSpawnCalled,
+	createCliResultJson,
+	createMockChildProcess,
+} from "../helpers.js";
 
 // Set required environment variable BEFORE any imports
 // Using vi.hoisted to ensure this runs at the earliest possible time
@@ -46,11 +50,11 @@ describe("Claude Code Wrapper App (Integration)", () => {
 
 			const responsePromise = request(app).get("/health");
 
-			// Simulate successful claude --version check (50ms for CI reliability)
-			setTimeout(() => {
+			// Simulate successful claude --version check
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -96,14 +100,14 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				.set("Authorization", validAuthHeader)
 				.send({ prompt: "Hello" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.stdout.emit(
 					"data",
 					Buffer.from(createCliResultJson({ result: "Hi!" })),
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -128,10 +132,10 @@ describe("Claude Code Wrapper App (Integration)", () => {
 
 			const responsePromise = request(app).get("/health");
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -147,14 +151,14 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				.set("Authorization", validAuthHeader)
 				.send({ prompt: "Hello" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.stdout.emit(
 					"data",
 					Buffer.from(createCliResultJson({ result: "Response" })),
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -176,14 +180,14 @@ describe("Claude Code Wrapper App (Integration)", () => {
 					schema: { type: "object", properties: { name: { type: "string" } } },
 				});
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.stdout.emit(
 					"data",
 					Buffer.from(createCliResultJson({ result: '{"name": "Test"}' })),
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -202,9 +206,9 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				.set("Authorization", validAuthHeader)
 				.send({ prompt: "Hello" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -224,14 +228,14 @@ describe("Claude Code Wrapper App (Integration)", () => {
 				.set("Content-Type", "application/json")
 				.send({ prompt: "Test prompt" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				mockProc.stdout.emit(
 					"data",
 					Buffer.from(createCliResultJson({ result: "Response" })),
 				);
 				mockProc.exitCode = 0;
 				mockProc.emit("close", 0, null);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
