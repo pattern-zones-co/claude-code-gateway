@@ -10,6 +10,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import generateRouter from "../../src/routes/generate.js";
 import {
+	afterSpawnCalled,
 	createCliResultJson,
 	createMockChildProcess,
 	simulateCliError,
@@ -70,7 +71,7 @@ describe("Generate Routes", () => {
 				.send({ prompt: "Hello" });
 
 			// Simulate successful CLI response
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({
@@ -80,7 +81,7 @@ describe("Generate Routes", () => {
 						session_id: "session-123",
 					}),
 				);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -105,9 +106,9 @@ describe("Generate Routes", () => {
 				.post("/generate-text")
 				.send({ prompt: "Hello", system: "Be helpful" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(mockProc, createCliResultJson({ result: "Hi!" }));
-			}, 50);
+			});
 
 			await responsePromise;
 
@@ -127,9 +128,9 @@ describe("Generate Routes", () => {
 				.post("/generate-text")
 				.send({ prompt: "Hello", model: "haiku" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(mockProc, createCliResultJson({ result: "Hi!" }));
-			}, 50);
+			});
 
 			await responsePromise;
 
@@ -149,9 +150,9 @@ describe("Generate Routes", () => {
 				.post("/generate-text")
 				.send({ prompt: "Hello", sessionId: "session-abc" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(mockProc, createCliResultJson({ result: "Hi!" }));
-			}, 50);
+			});
 
 			await responsePromise;
 
@@ -171,9 +172,9 @@ describe("Generate Routes", () => {
 				.post("/generate-text")
 				.send({ prompt: "Hello" });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliError(mockProc, "Rate limit exceeded", 1);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -225,14 +226,14 @@ describe("Generate Routes", () => {
 				.post("/generate-object")
 				.send({ prompt: "Generate a person", schema: validSchema });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({
 						result: '{"name": "Alice", "age": 30}',
 					}),
 				);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -252,14 +253,14 @@ describe("Generate Routes", () => {
 				.post("/generate-object")
 				.send({ prompt: "Generate a person", schema: validSchema });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({
 						result: '```json\n{"name": "Bob"}\n```',
 					}),
 				);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -276,14 +277,14 @@ describe("Generate Routes", () => {
 				.post("/generate-object")
 				.send({ prompt: "Generate a person", schema: validSchema });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({
 						result: 'Here is the result: {"name": "Charlie"} - done!',
 					}),
 				);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -301,14 +302,14 @@ describe("Generate Routes", () => {
 				.post("/generate-object")
 				.send({ prompt: "Generate a list", schema: arraySchema });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({
 						result: '["one", "two", "three"]',
 					}),
 				);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -325,14 +326,14 @@ describe("Generate Routes", () => {
 				.post("/generate-object")
 				.send({ prompt: "Generate a person", schema: validSchema });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({
 						result: "This is not valid JSON at all",
 					}),
 				);
-			}, 50);
+			});
 
 			const res = await responsePromise;
 
@@ -350,12 +351,12 @@ describe("Generate Routes", () => {
 				.post("/generate-object")
 				.send({ prompt: "Generate a person", schema: validSchema });
 
-			setTimeout(() => {
+			afterSpawnCalled(mockSpawn, () => {
 				simulateCliSuccess(
 					mockProc,
 					createCliResultJson({ result: '{"name": "Test"}' }),
 				);
-			}, 50);
+			});
 
 			await responsePromise;
 
