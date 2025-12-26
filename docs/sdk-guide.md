@@ -21,29 +21,27 @@ uv pip install koine-sdk
 ### TypeScript
 
 ```typescript
-import { KoineConfig } from '@patternzones/koine-sdk';
+import { createKoine } from '@patternzones/koine-sdk';
 
-const config: KoineConfig = {
+const koine = createKoine({
   baseUrl: 'http://localhost:3100',
   authKey: 'your-api-key',
   timeout: 300000,  // optional, default 5 min
   model: 'sonnet',  // optional default model
-};
+});
 ```
 
 ### Python
 
 ```python
-from koine_sdk import KoineConfig, create_koine
+from koine_sdk import create_koine
 
-config = KoineConfig(
+koine = create_koine(
     base_url="http://localhost:3100",
     auth_key="your-api-key",
     timeout=300.0,  # optional, default 5 min
     model="sonnet",  # optional default model
 )
-
-koine = create_koine(config)
 ```
 
 ## Text Generation
@@ -51,9 +49,7 @@ koine = create_koine(config)
 ### TypeScript
 
 ```typescript
-import { generateText } from '@patternzones/koine-sdk';
-
-const result = await generateText(config, {
+const result = await koine.generateText({
   prompt: 'Explain quantum computing',
   system: 'You are a helpful teacher',  // optional
   sessionId: 'continue-conversation',   // optional
@@ -83,9 +79,7 @@ print(result.session_id)
 ### TypeScript
 
 ```typescript
-import { streamText } from '@patternzones/koine-sdk';
-
-const result = await streamText(config, {
+const result = await koine.streamText({
   prompt: 'Write a short story',
 });
 
@@ -113,7 +107,6 @@ async with koine.stream_text(prompt="Write a short story") as result:
 ### TypeScript
 
 ```typescript
-import { generateObject } from '@patternzones/koine-sdk';
 import { z } from 'zod';
 
 const PersonSchema = z.object({
@@ -122,7 +115,7 @@ const PersonSchema = z.object({
   email: z.string().email(),
 });
 
-const result = await generateObject(config, {
+const result = await koine.generateObject({
   prompt: 'Extract: John is 30, email john@example.com',
   schema: PersonSchema,
 });
@@ -157,7 +150,7 @@ print(result.object.name, result.object.age)
 import { KoineError } from '@patternzones/koine-sdk';
 
 try {
-  const result = await generateText(config, { prompt: 'Hello' });
+  const result = await koine.generateText({ prompt: 'Hello' });
 } catch (error) {
   if (error instanceof KoineError) {
     console.error(error.status, error.code, error.message);
@@ -183,8 +176,8 @@ except KoineError as e:
 ### TypeScript
 
 ```typescript
-const result1 = await generateText(config, { prompt: 'My name is Alice' });
-const result2 = await generateText(config, {
+const result1 = await koine.generateText({ prompt: 'My name is Alice' });
+const result2 = await koine.generateText({
   prompt: 'What is my name?',
   sessionId: result1.sessionId,
 });

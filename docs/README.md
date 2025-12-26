@@ -56,13 +56,14 @@ bun add @patternzones/koine-sdk
 ```
 
 ```typescript
-import { generateText } from '@patternzones/koine-sdk';
+import { createKoine } from '@patternzones/koine-sdk';
 
-const result = await generateText(
-  { baseUrl: 'http://localhost:3100', authKey: 'your-api-key' },
-  { prompt: 'Hello!' }
-);
+const koine = createKoine({
+  baseUrl: 'http://localhost:3100',
+  authKey: 'your-api-key',
+});
 
+const result = await koine.generateText({ prompt: 'Hello!' });
 console.log(result.text);
 ```
 
@@ -74,15 +75,13 @@ uv pip install koine-sdk
 ```
 
 ```python
-from koine_sdk import KoineConfig, create_koine
+from koine_sdk import create_koine
 
-config = KoineConfig(
+koine = create_koine(
     base_url="http://localhost:3100",
     auth_key="your-api-key",
-    timeout=300.0,
 )
 
-koine = create_koine(config)
 result = await koine.generate_text(prompt="Hello!")
 print(result.text)
 ```

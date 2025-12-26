@@ -114,6 +114,7 @@ console.log(result.text);
 | [Getting Started](docs/README.md) | Installation and setup |
 | [API Reference](docs/api-reference.md) | REST endpoints |
 | [SDK Guide](docs/sdk-guide.md) | TypeScript & Python SDKs |
+| [Examples](docs/examples/README.md) | Runnable SDK examples |
 | [Docker Deployment](docs/docker-deployment.md) | Production deployment |
 | [Skills & Commands](docs/skills-and-commands.md) | Extending Claude Code |
 | [Environment Variables](docs/environment-variables.md) | Configuration |
