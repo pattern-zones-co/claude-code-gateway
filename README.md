@@ -1,4 +1,11 @@
-<img src="docs/assets/logo.png" alt="Koine" width="400">
+```
+██╗  ██╗  ██████╗  ██╗ ███╗   ██╗ ███████╗
+██║ ██╔╝ ██╔═══██╗ ██║ ████╗  ██║ ██╔════╝
+█████╔╝  ██║   ██║ ██║ ██╔██╗ ██║ █████╗
+██╔═██╗  ██║   ██║ ██║ ██║╚██╗██║ ██╔══╝
+██║  ██╗ ╚██████╔╝ ██║ ██║ ╚████║ ███████╗
+╚═╝  ╚═╝  ╚═════╝  ╚═╝ ╚═╝  ╚═══╝ ╚══════╝
+```
 
 HTTP gateway + SDKs that expose [Claude Code CLI](https://github.com/anthropics/claude-code) as a REST API.
 
