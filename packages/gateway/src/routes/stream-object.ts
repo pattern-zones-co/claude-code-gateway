@@ -297,7 +297,19 @@ router.post(
 						// Final result - parse the accumulated JSON text
 						if (accumulatedJson && !objectEventSent) {
 							try {
-								const finalObject = parseJsonResponse(accumulatedJson);
+								const { object: finalObject, strategy } =
+									parseJsonResponse(accumulatedJson);
+								// Warn if fallback extraction was needed (non-clean JSON)
+								if (strategy !== "direct") {
+									logger.warn("JSON required fallback extraction", {
+										strategy,
+										accumulatedLength: accumulatedJson.length,
+									});
+									safeSendEvent("warning", {
+										message: `JSON extraction used fallback strategy: ${strategy}`,
+										code: "EXTRACTION_FALLBACK",
+									});
+								}
 								safeSendEvent("object", {
 									object: finalObject,
 								});
@@ -372,7 +384,19 @@ router.post(
 						// If we haven't sent the object yet, parse accumulated JSON
 						if (accumulatedJson && !objectEventSent) {
 							try {
-								const finalObject = parseJsonResponse(accumulatedJson);
+								const { object: finalObject, strategy } =
+									parseJsonResponse(accumulatedJson);
+								// Warn if fallback extraction was needed (non-clean JSON)
+								if (strategy !== "direct") {
+									logger.warn("JSON required fallback extraction", {
+										strategy,
+										accumulatedLength: accumulatedJson.length,
+									});
+									safeSendEvent("warning", {
+										message: `JSON extraction used fallback strategy: ${strategy}`,
+										code: "EXTRACTION_FALLBACK",
+									});
+								}
 								safeSendEvent("object", { object: finalObject });
 								objectEventSent = true;
 							} catch (parseError) {
@@ -411,6 +435,7 @@ router.post(
 						);
 					} else {
 						// Clean exit but unparseable buffer - this is unexpected
+						// Notify client about potential data loss
 						logger.warn("Unparseable data in buffer after clean CLI exit", {
 							bufferLength: lineBuffer.length,
 							bufferPreview: lineBuffer.slice(0, 100),
@@ -418,6 +443,10 @@ router.post(
 								bufferError instanceof Error
 									? bufferError.message
 									: String(bufferError),
+						});
+						safeSendEvent("warning", {
+							message: "Some CLI output could not be processed",
+							code: "BUFFER_PARSE_WARNING",
 						});
 					}
 				}
@@ -475,17 +504,29 @@ router.post(
 );
 
 /**
+ * Result from parseJsonResponse including extraction metadata.
+ */
+interface ParsedJsonResult {
+	object: unknown;
+	/** Extraction strategy used: "direct", "markdown-block", "object-extraction", "array-extraction" */
+	strategy: string;
+}
+
+/**
  * Attempts to parse JSON from Claude's response.
  * Since we use prompt injection rather than constrained decoding, Claude may
  * wrap JSON in markdown code blocks or include preamble text. This function
  * tries multiple extraction strategies in order of preference.
+ *
+ * Returns both the parsed object and the extraction strategy used, so callers
+ * can warn users when fallback extraction was necessary.
  */
-function parseJsonResponse(text: string): unknown {
+function parseJsonResponse(text: string): ParsedJsonResult {
 	const parseAttempts: Array<{ strategy: string; error: string }> = [];
 
 	// Try direct parse first
 	try {
-		return JSON.parse(text);
+		return { object: JSON.parse(text), strategy: "direct" };
 	} catch (error) {
 		if (!(error instanceof SyntaxError)) {
 			throw error; // Don't hide non-parse errors (TypeError, etc.)
@@ -497,7 +538,10 @@ function parseJsonResponse(text: string): unknown {
 	const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
 	if (jsonBlockMatch) {
 		try {
-			return JSON.parse(jsonBlockMatch[1].trim());
+			return {
+				object: JSON.parse(jsonBlockMatch[1].trim()),
+				strategy: "markdown-block",
+			};
 		} catch (error) {
 			if (!(error instanceof SyntaxError)) {
 				throw error;
@@ -510,7 +554,10 @@ function parseJsonResponse(text: string): unknown {
 	const objectMatch = text.match(/\{[\s\S]*\}/);
 	if (objectMatch) {
 		try {
-			return JSON.parse(objectMatch[0]);
+			return {
+				object: JSON.parse(objectMatch[0]),
+				strategy: "object-extraction",
+			};
 		} catch (error) {
 			if (!(error instanceof SyntaxError)) {
 				throw error;
@@ -526,7 +573,10 @@ function parseJsonResponse(text: string): unknown {
 	const arrayMatch = text.match(/\[[\s\S]*\]/);
 	if (arrayMatch) {
 		try {
-			return JSON.parse(arrayMatch[0]);
+			return {
+				object: JSON.parse(arrayMatch[0]),
+				strategy: "array-extraction",
+			};
 		} catch (error) {
 			if (!(error instanceof SyntaxError)) {
 				throw error;

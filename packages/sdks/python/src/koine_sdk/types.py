@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-T = TypeVar("T")
+T = TypeVar("T", bound=BaseModel)
 
 
 @dataclass(frozen=True)
@@ -120,7 +120,7 @@ class StreamObjectResult(Generic[T]):
     """Future that resolves with usage stats (when stream completes)"""
 
     _object_future: asyncio.Future[T]
-    """Future that resolves with final validated object"""
+    """Future resolving to final validated object, or rejecting on validation failure"""
 
     async def session_id(self) -> str:
         """Session ID for conversation continuity.
@@ -134,5 +134,9 @@ class StreamObjectResult(Generic[T]):
         return await self._usage_future
 
     async def object(self) -> T:
-        """Final validated object. Resolves when stream completes."""
+        """Final validated object. Resolves when stream completes.
+
+        Raises:
+            KoineError: With code 'VALIDATION_ERROR' if final object fails validation.
+        """
         return await self._object_future

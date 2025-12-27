@@ -46,6 +46,8 @@ const CRITICAL_EVENTS = new Set([
  *   - sessionId: Promise that resolves early when session event arrives
  *   - usage: Promise that resolves when stream completes
  * @throws {KoineError} When connection fails or stream encounters an error
+ * @throws {KoineError} With code 'VALIDATION_ERROR' if final object fails schema validation
+ * @throws {KoineError} With code 'NO_OBJECT' if stream ends without receiving final object
  */
 export async function streamObject<T>(
 	config: KoineConfig,
@@ -157,8 +159,8 @@ export async function streamObject<T>(
 								if (partialResult.success) {
 									controller.enqueue(partialResult.data);
 								} else {
-									// Partial objects may not validate - that's expected
-									// Still enqueue the raw parsed object as T (best-effort)
+									// Partial objects may not fully validate during streaming - expected.
+									// Enqueue raw parsed data for consumers to handle incrementally.
 									controller.enqueue(parsed.parsed as T);
 								}
 								break;
@@ -210,7 +212,6 @@ export async function streamObject<T>(
 								break;
 							}
 							case "done": {
-								// Stream complete - nothing to do here
 								break;
 							}
 						}

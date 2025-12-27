@@ -5,7 +5,7 @@ import json
 import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar
 
 import httpx
 from pydantic import BaseModel, ValidationError
@@ -52,7 +52,8 @@ async def process_object_sse_stream(
         object_future: Future to resolve with final validated object
 
     Yields:
-        Partial objects as they arrive (best-effort typed as T)
+        Partial objects as they arrive. These may be raw dicts if they don't
+        fully validate against the schema (expected for incomplete streaming data).
     """
     try:
         async for sse_event in parse_sse_stream(response):
@@ -68,18 +69,17 @@ async def process_object_sse_stream(
                     parsed_event = SSEPartialObjectEvent.model_validate(
                         json.loads(sse_event.data)
                     )
-                    # Skip null/non-object partials (happens during early JSON parsing)
-                    parsed_obj = parsed_event.parsed
-                    if parsed_obj is None or not isinstance(parsed_obj, dict):
+                    # Skip null partials (happens during early JSON parsing)
+                    partial_data = parsed_event.parsed
+                    if partial_data is None:
                         continue
                     # Try to validate partial with Pydantic (best-effort)
-                    partial_data = cast(dict[str, Any], parsed_obj)
                     try:
                         validated = schema.model_validate(partial_data)
                         yield validated
                     except ValidationError:
-                        # Partial objects may not validate - that's expected
-                        # Still yield the raw parsed object as T (best-effort)
+                        # Partial objects may not fully validate during streaming.
+                        # Yield raw dict for consumers to handle incrementally.
                         yield partial_data  # type: ignore[misc]
 
                 elif sse_event.event == "object":
@@ -121,7 +121,6 @@ async def process_object_sse_stream(
                     raise error
 
                 elif sse_event.event == "done":
-                    # Stream complete - nothing special to do here
                     pass
 
             except (json.JSONDecodeError, ValidationError) as e:
@@ -144,6 +143,36 @@ async def process_object_sse_stream(
                     e,
                     raw_preview,
                 )
+
+    except httpx.ReadTimeout as e:
+        error = KoineError(f"Stream read timeout: {e}", "TIMEOUT")
+        if not usage_future.done():
+            usage_future.set_exception(error)
+        if not object_future.done():
+            object_future.set_exception(error)
+        if not session_id_future.done():
+            session_id_future.set_exception(error)
+        raise error from e
+
+    except httpx.RemoteProtocolError as e:
+        error = KoineError(f"Server disconnected unexpectedly: {e}", "NETWORK_ERROR")
+        if not usage_future.done():
+            usage_future.set_exception(error)
+        if not object_future.done():
+            object_future.set_exception(error)
+        if not session_id_future.done():
+            session_id_future.set_exception(error)
+        raise error from e
+
+    except httpx.ReadError as e:
+        error = KoineError(f"Stream read error: {e}", "NETWORK_ERROR")
+        if not usage_future.done():
+            usage_future.set_exception(error)
+        if not object_future.done():
+            object_future.set_exception(error)
+        if not session_id_future.done():
+            session_id_future.set_exception(error)
+        raise error from e
 
     finally:
         # Handle stream ending without expected events
@@ -218,8 +247,9 @@ class HTTPObjectStreamContext(Generic[T]):
         usage_future: asyncio.Future[KoineUsage] = loop.create_future()
         object_future: asyncio.Future[T] = loop.create_future()
 
-        response = self._response  # Capture for closure
-        schema = self._schema  # Capture for closure
+        # Capture references for closure (self may change during iteration)
+        response = self._response
+        schema = self._schema
 
         async def partial_object_stream_generator() -> AsyncIterator[T]:
             async for partial in process_object_sse_stream(

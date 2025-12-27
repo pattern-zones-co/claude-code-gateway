@@ -347,3 +347,57 @@ class TestStreamObject:
         request = httpx_mock.get_request()
         assert request is not None
         assert request.headers["authorization"] == "Bearer test-key"
+
+    async def test_cancellation_mid_stream(
+        self, httpx_mock: HTTPXMock, config: KoineConfig
+    ):
+        """Test that stream can be cancelled mid-iteration (parity with TS abort)."""
+        import asyncio
+
+        usage = {"inputTokens": 1, "outputTokens": 1, "totalTokens": 2}
+        sse_data = sse_response(
+            [
+                ("session", {"sessionId": "cancel-session"}),
+                ("partial-object", {"partial": '{"name":"A"', "parsed": {"name": "A"}}),
+                (
+                    "partial-object",
+                    {"partial": '{"name":"Ab"', "parsed": {"name": "Ab"}},
+                ),
+                (
+                    "partial-object",
+                    {"partial": '{"name":"Abc"', "parsed": {"name": "Abc"}},
+                ),
+                (
+                    "partial-object",
+                    {"partial": '{"name":"Abcd"', "parsed": {"name": "Abcd"}},
+                ),
+                ("object", {"object": {"name": "Abcde", "age": 99}}),
+                ("result", {"sessionId": "cancel-session", "usage": usage}),
+                ("done", {"code": 0}),
+            ]
+        )
+
+        httpx_mock.add_response(
+            url="http://localhost:3100/stream-object",
+            text=sse_data,
+            headers={"content-type": "text/event-stream"},
+        )
+
+        koine = create_koine(config)
+        partials_received = []
+        cancelled = False
+
+        async with koine.stream_object(prompt="test", schema=Person) as result:
+            try:
+                async for partial in result.partial_object_stream:
+                    partials_received.append(partial)
+                    # Cancel after receiving 2 partials
+                    if len(partials_received) >= 2:
+                        raise asyncio.CancelledError("Simulated cancellation")
+            except asyncio.CancelledError:
+                cancelled = True
+
+        # Should have received some partials before cancellation
+        assert len(partials_received) >= 2
+        # Should have been cancelled
+        assert cancelled is True

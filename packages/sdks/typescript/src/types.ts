@@ -98,7 +98,7 @@ export interface SSEObjectEvent {
 export interface KoineStreamObjectResult<T> {
 	/** Stream of partial objects as they arrive. Supports both ReadableStream methods and async iteration. */
 	readonly partialObjectStream: ReadableStream<T> & AsyncIterable<T>;
-	/** Final validated object (resolves when stream completes via object event) */
+	/** Final validated object (resolves when stream completes via object event, rejects with KoineError if validation fails) */
 	readonly object: Promise<T>;
 	/** Session ID for conversation continuity (resolves early in stream, after session event) */
 	readonly sessionId: Promise<string>;
