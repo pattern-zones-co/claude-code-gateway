@@ -699,5 +699,143 @@ describe("Stream Object Route", () => {
 			// Should not be a 400 error
 			expect(res.headers["content-type"]).toBe("text/event-stream");
 		});
+
+		it("emits error when CLI produces no JSON output (empty response)", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Hello", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// Only send result without any content - simulates empty response
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(`${createStreamResultMessage()}\n`),
+				);
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			const errorEvent = events.find((e) => e.event === "error");
+			expect(errorEvent).toBeDefined();
+			expect((errorEvent?.data as { code: string }).code).toBe("PARSE_ERROR");
+			expect((errorEvent?.data as { error: string }).error).toContain(
+				"No object data",
+			);
+		});
+
+		it("parses JSON wrapped in markdown code blocks", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Extract info", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// Claude wraps JSON in markdown despite instructions
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(
+						`${createStreamEventDelta('```json\n{"name": "Wrapped", "age": 42}\n```')}\n`,
+					),
+				);
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(`${createStreamResultMessage()}\n`),
+				);
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			const objectEvent = events.find((e) => e.event === "object");
+			expect(objectEvent).toBeDefined();
+			expect(
+				(objectEvent?.data as { object: { name: string; age: number } }).object,
+			).toEqual({ name: "Wrapped", age: 42 });
+		});
+
+		it("extracts JSON from text with surrounding content", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Extract", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// Claude adds explanation despite instructions
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(
+						`${createStreamEventDelta('Here is the result: {"name": "Extracted", "age": 25} Hope this helps!')}\n`,
+					),
+				);
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(`${createStreamResultMessage()}\n`),
+				);
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			const objectEvent = events.find((e) => e.event === "object");
+			expect(objectEvent).toBeDefined();
+			expect(
+				(objectEvent?.data as { object: { name: string } }).object.name,
+			).toBe("Extracted");
+		});
+
+		it("handles array schemas correctly", async () => {
+			const arraySchema = {
+				type: "array",
+				items: {
+					type: "object",
+					properties: { name: { type: "string" } },
+				},
+			};
+
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "List people", schema: arraySchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(
+						`${createStreamEventDelta('[{"name": "Alice"}, {"name": "Bob"}]')}\n`,
+					),
+				);
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(`${createStreamResultMessage()}\n`),
+				);
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			const objectEvent = events.find((e) => e.event === "object");
+			expect(objectEvent).toBeDefined();
+			expect(
+				(objectEvent?.data as { object: Array<{ name: string }> }).object,
+			).toEqual([{ name: "Alice" }, { name: "Bob" }]);
+		});
 	});
 });

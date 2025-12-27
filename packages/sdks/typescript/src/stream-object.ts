@@ -20,6 +20,15 @@ import type {
 	SSEResultEvent,
 } from "./types.js";
 
+/** Events where parse errors must propagate (vs partial-object which can log and continue) */
+const CRITICAL_EVENTS = new Set([
+	"session",
+	"result",
+	"error",
+	"done",
+	"object",
+]);
+
 /**
  * Streams structured JSON objects from Koine gateway service.
  *
@@ -40,13 +49,7 @@ import type {
  */
 export async function streamObject<T>(
 	config: KoineConfig,
-	options: {
-		system?: string;
-		prompt: string;
-		schema: z.ZodSchema<T>;
-		sessionId?: string;
-		signal?: AbortSignal;
-	},
+	options: StreamObjectOptions<T>,
 ): Promise<KoineStreamObjectResult<T>> {
 	validateConfig(config);
 
@@ -124,15 +127,7 @@ export async function streamObject<T>(
 		.pipeThrough(
 			new TransformStream<{ event: string; data: string }, T>({
 				transform(sseEvent, controller) {
-					// Critical events must propagate parse errors
-					// partial-object events can log and continue
-					const isCriticalEvent = [
-						"session",
-						"result",
-						"error",
-						"done",
-						"object",
-					].includes(sseEvent.event);
+					const isCriticalEvent = CRITICAL_EVENTS.has(sseEvent.event);
 
 					try {
 						switch (sseEvent.event) {

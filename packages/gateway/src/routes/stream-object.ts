@@ -51,10 +51,14 @@ const router: Router = Router();
  * Uses prompt injection to instruct Claude to output JSON, then parses partial
  * objects as tokens arrive using the partial-json library.
  *
- * NOTE: We use prompt injection rather than --json-schema because the CLI's
- * constrained decoding mode doesn't stream JSON tokens incrementally - it only
- * provides the complete object at the end. See:
- * https://github.com/anthropics/claude-code/issues/15511
+ * NOTE: We use prompt injection rather than --json-schema because when using
+ * the CLI's --json-schema flag with streaming, JSON tokens are not emitted in
+ * stream events - only the final object is provided in result.structured_output.
+ * See: https://github.com/anthropics/claude-code/issues/15511
+ *
+ * Trade-off: Since we use prompt injection rather than constrained decoding,
+ * the model may occasionally output non-JSON content or wrap JSON in markdown.
+ * The parseJsonResponse() function includes fallback strategies to handle this.
  *
  * Features:
  * - Real-time partial JSON parsing with partial-json library
@@ -97,7 +101,7 @@ router.post(
 		let timeoutId: NodeJS.Timeout | undefined;
 
 		// Build CLI arguments with prompt injection for JSON output
-		const { args } = buildStreamObjectArgs({
+		const args = buildStreamObjectArgs({
 			prompt,
 			system,
 			sessionId,
@@ -150,13 +154,40 @@ router.post(
 			}
 			if (claude.exitCode === null && !claude.killed) {
 				logger.info("Killing Claude CLI process", { reason });
-				claude.kill("SIGTERM");
+				try {
+					claude.kill("SIGTERM");
+				} catch (killError) {
+					logger.warn("Failed to send SIGTERM to CLI", {
+						reason,
+						error:
+							killError instanceof Error
+								? killError.message
+								: String(killError),
+					});
+					return;
+				}
 				// Force kill after 1 second if still running
-				setTimeout(() => {
+				const forceKillTimeout = setTimeout(() => {
 					if (claude.exitCode === null && !claude.killed) {
-						claude.kill("SIGKILL");
+						logger.warn(
+							"CLI did not terminate after SIGTERM, sending SIGKILL",
+							{ reason },
+						);
+						try {
+							claude.kill("SIGKILL");
+						} catch (killError) {
+							logger.error("Failed to send SIGKILL to CLI", {
+								reason,
+								error:
+									killError instanceof Error
+										? killError.message
+										: String(killError),
+							});
+						}
 					}
 				}, 1000);
+				// Clear the force kill timeout if process exits normally
+				claude.once("close", () => clearTimeout(forceKillTimeout));
 			}
 		};
 
@@ -212,6 +243,18 @@ router.post(
 
 				try {
 					const parsed = JSON.parse(line) as StreamMessage;
+
+					if (parsed.type === "stream_event") {
+						// Log if we get a content_block_delta without text (unexpected structure)
+						if (
+							parsed.event?.type === "content_block_delta" &&
+							!parsed.event.delta?.text
+						) {
+							logger.warn("content_block_delta missing text field", {
+								delta: parsed.event.delta,
+							});
+						}
+					}
 
 					if (
 						parsed.type === "stream_event" &&
@@ -332,8 +375,19 @@ router.post(
 								const finalObject = parseJsonResponse(accumulatedJson);
 								safeSendEvent("object", { object: finalObject });
 								objectEventSent = true;
-							} catch {
-								// Error already logged in main handler
+							} catch (parseError) {
+								logger.error("Failed to parse final object in close handler", {
+									accumulatedLength: accumulatedJson.length,
+									accumulatedPreview: accumulatedJson.slice(0, 200),
+									error:
+										parseError instanceof Error
+											? parseError.message
+											: String(parseError),
+								});
+								safeSendEvent("error", {
+									error: "Failed to parse final JSON object",
+									code: "PARSE_ERROR",
+								});
 							}
 						}
 						safeSendEvent("result", {
@@ -422,14 +476,21 @@ router.post(
 
 /**
  * Attempts to parse JSON from Claude's response.
- * Handles common edge cases like markdown code blocks.
+ * Since we use prompt injection rather than constrained decoding, Claude may
+ * wrap JSON in markdown code blocks or include preamble text. This function
+ * tries multiple extraction strategies in order of preference.
  */
 function parseJsonResponse(text: string): unknown {
+	const parseAttempts: Array<{ strategy: string; error: string }> = [];
+
 	// Try direct parse first
 	try {
 		return JSON.parse(text);
-	} catch {
-		// Continue to fallback strategies
+	} catch (error) {
+		if (!(error instanceof SyntaxError)) {
+			throw error; // Don't hide non-parse errors (TypeError, etc.)
+		}
+		parseAttempts.push({ strategy: "direct", error: error.message });
 	}
 
 	// Strip markdown code blocks if present
@@ -437,8 +498,11 @@ function parseJsonResponse(text: string): unknown {
 	if (jsonBlockMatch) {
 		try {
 			return JSON.parse(jsonBlockMatch[1].trim());
-		} catch {
-			// Continue to next strategy
+		} catch (error) {
+			if (!(error instanceof SyntaxError)) {
+				throw error;
+			}
+			parseAttempts.push({ strategy: "markdown-block", error: error.message });
 		}
 	}
 
@@ -447,8 +511,14 @@ function parseJsonResponse(text: string): unknown {
 	if (objectMatch) {
 		try {
 			return JSON.parse(objectMatch[0]);
-		} catch {
-			// Continue to next strategy
+		} catch (error) {
+			if (!(error instanceof SyntaxError)) {
+				throw error;
+			}
+			parseAttempts.push({
+				strategy: "object-extraction",
+				error: error.message,
+			});
 		}
 	}
 
@@ -457,18 +527,33 @@ function parseJsonResponse(text: string): unknown {
 	if (arrayMatch) {
 		try {
 			return JSON.parse(arrayMatch[0]);
-		} catch {
-			// Fall through to error
+		} catch (error) {
+			if (!(error instanceof SyntaxError)) {
+				throw error;
+			}
+			parseAttempts.push({
+				strategy: "array-extraction",
+				error: error.message,
+			});
 		}
 	}
 
-	throw new Error("Failed to parse JSON from response");
+	// Include diagnostic information in error
+	const attemptsStr = parseAttempts
+		.map((a) => `${a.strategy}: ${a.error}`)
+		.join("; ");
+	const preview = text.length > 200 ? `${text.slice(0, 200)}...` : text;
+	throw new Error(
+		`Failed to parse JSON from response. Attempts: [${attemptsStr}]. Preview: ${preview}`,
+	);
 }
 
 /**
  * Builds CLI arguments for stream-object mode.
  * Uses prompt injection to instruct Claude to output JSON matching the schema.
- * Note: --verbose is required when using --output-format stream-json with --print
+ *
+ * Note: --verbose is required when using --output-format stream-json with --print.
+ * Without it, the CLI may not emit stream_event messages for partial content.
  */
 function buildStreamObjectArgs(options: {
 	prompt: string;
@@ -476,7 +561,7 @@ function buildStreamObjectArgs(options: {
 	sessionId?: string;
 	model?: string;
 	schema: Record<string, unknown>;
-}): { args: string[]; enhancedPrompt: string; enhancedSystem: string } {
+}): string[] {
 	// Build enhanced prompt that instructs Claude to output JSON matching schema
 	const schemaString = JSON.stringify(options.schema, null, 2);
 	const enhancedPrompt = `${options.prompt}
@@ -514,7 +599,7 @@ ${schemaString}`;
 
 	args.push(enhancedPrompt);
 
-	return { args, enhancedPrompt, enhancedSystem };
+	return args;
 }
 
 export default router;
