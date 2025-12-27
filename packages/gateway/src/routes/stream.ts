@@ -3,7 +3,9 @@ import { type Request, type Response, Router } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { buildClaudeEnv } from "../cli.js";
 import { withConcurrencyLimit } from "../concurrency.js";
+import { gatewayConfig } from "../config.js";
 import { logger } from "../logger.js";
+import { resolveAllowedTools } from "../tools.js";
 import {
 	type CliUsageInfo,
 	createUsageInfo,
@@ -77,7 +79,38 @@ router.post(
 			return;
 		}
 
-		const { prompt, system, sessionId, model } = parseResult.data;
+		const {
+			prompt,
+			system,
+			sessionId,
+			model,
+			allowedTools: requestAllowedTools,
+		} = parseResult.data;
+
+		// Resolve allowed tools: intersection of gateway config and request
+		const allowedTools = resolveAllowedTools({
+			gatewayAllowed: gatewayConfig.allowedTools,
+			gatewayDisallowed: gatewayConfig.disallowedTools,
+			requestAllowed: requestAllowedTools,
+		});
+
+		// Empty array means all requested tools were disallowed
+		// Must check before setting SSE headers
+		if (allowedTools && allowedTools.length === 0) {
+			res.status(400).json({
+				error: "No valid tools available: all requested tools are disallowed",
+				code: "NO_TOOLS_AVAILABLE",
+			});
+			return;
+		}
+
+		logger.info("stream", {
+			model: model || "default",
+			hasSystem: !!system,
+			promptLength: prompt.length,
+			requestedTools: requestAllowedTools,
+			resolvedTools: allowedTools,
+		});
 
 		// Set up SSE headers
 		res.setHeader("Content-Type", "text/event-stream");
@@ -97,7 +130,13 @@ router.post(
 		let timeoutId: NodeJS.Timeout | undefined;
 
 		// Build CLI arguments
-		const args = buildStreamArgs({ prompt, system, sessionId, model });
+		const args = buildStreamArgs({
+			prompt,
+			system,
+			sessionId,
+			model,
+			allowedTools,
+		});
 
 		logger.info("Spawning Claude CLI for stream", { args });
 
@@ -331,11 +370,12 @@ router.post(
  * Builds CLI arguments for streaming mode.
  * Note: --verbose is required when using --output-format stream-json with --print
  */
-function buildStreamArgs(options: {
+export function buildStreamArgs(options: {
 	prompt: string;
 	system?: string;
 	sessionId?: string;
 	model?: string;
+	allowedTools?: string[];
 }): string[] {
 	// --verbose is required for stream-json output with --print
 	// --include-partial-messages enables progressive token streaming
@@ -359,6 +399,11 @@ function buildStreamArgs(options: {
 	// Resume specific session by ID
 	if (options.sessionId) {
 		args.push("--resume", options.sessionId);
+	}
+
+	// Allowed tools - each tool is a separate argument after --allowedTools
+	if (options.allowedTools?.length) {
+		args.push("--allowedTools", ...options.allowedTools);
 	}
 
 	args.push(options.prompt);

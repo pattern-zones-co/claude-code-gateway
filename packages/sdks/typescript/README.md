@@ -43,6 +43,7 @@ console.log(result.text);
 - **Text Generation** — `generateText()` for simple prompts
 - **Streaming** — `streamText()` with ReadableStream (async iterable)
 - **Structured Output** — `generateObject()` with Zod schema validation
+- **Tool Restrictions** — `allowedTools` parameter to limit CLI tool access
 - **Streaming Structured Output** — `streamObject()` with partial object streaming
 - **Cancellation** — AbortSignal support for all requests
 - **Type Safety** — Full TypeScript types for all requests and responses
@@ -107,6 +108,7 @@ See the [SDK Guide](https://github.com/pattern-zones-co/koine/blob/main/docs/sdk
 - Configuration options
 - Streaming examples
 - Structured output with Zod
+- Tool restrictions
 - Error handling
 - Multi-turn conversations
 

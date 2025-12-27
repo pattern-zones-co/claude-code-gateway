@@ -1,7 +1,9 @@
 import { type Request, type Response, Router } from "express";
 import { ClaudeCliError, executeClaudeCli } from "../cli.js";
 import { withConcurrencyLimit } from "../concurrency.js";
+import { gatewayConfig } from "../config.js";
 import { logger } from "../logger.js";
+import { resolveAllowedTools } from "../tools.js";
 import {
 	type ErrorResponse,
 	type GenerateObjectResponse,
@@ -36,12 +38,36 @@ router.post(
 				return;
 			}
 
-			const { prompt, system, sessionId, model } = parseResult.data;
+			const {
+				prompt,
+				system,
+				sessionId,
+				model,
+				allowedTools: requestAllowedTools,
+			} = parseResult.data;
+
+			// Resolve allowed tools: intersection of gateway config and request
+			const allowedTools = resolveAllowedTools({
+				gatewayAllowed: gatewayConfig.allowedTools,
+				gatewayDisallowed: gatewayConfig.disallowedTools,
+				requestAllowed: requestAllowedTools,
+			});
+
+			// Empty array means all requested tools were disallowed
+			if (allowedTools && allowedTools.length === 0) {
+				res.status(400).json({
+					error: "No valid tools available: all requested tools are disallowed",
+					code: "NO_TOOLS_AVAILABLE",
+				});
+				return;
+			}
 
 			logger.info("generate-text", {
 				model: model || "default",
 				hasSystem: !!system,
 				promptLength: prompt.length,
+				requestedTools: requestAllowedTools,
+				resolvedTools: allowedTools,
 			});
 
 			try {
@@ -50,6 +76,7 @@ router.post(
 					system,
 					sessionId,
 					model,
+					allowedTools,
 				});
 
 				res.json({
@@ -89,12 +116,37 @@ router.post(
 				return;
 			}
 
-			const { prompt, system, schema, sessionId, model } = parseResult.data;
+			const {
+				prompt,
+				system,
+				schema,
+				sessionId,
+				model,
+				allowedTools: requestAllowedTools,
+			} = parseResult.data;
+
+			// Resolve allowed tools: intersection of gateway config and request
+			const allowedTools = resolveAllowedTools({
+				gatewayAllowed: gatewayConfig.allowedTools,
+				gatewayDisallowed: gatewayConfig.disallowedTools,
+				requestAllowed: requestAllowedTools,
+			});
+
+			// Empty array means all requested tools were disallowed
+			if (allowedTools && allowedTools.length === 0) {
+				res.status(400).json({
+					error: "No valid tools available: all requested tools are disallowed",
+					code: "NO_TOOLS_AVAILABLE",
+				});
+				return;
+			}
 
 			logger.info("generate-object", {
 				model: model || "default",
 				hasSystem: !!system,
 				promptLength: prompt.length,
+				requestedTools: requestAllowedTools,
+				resolvedTools: allowedTools,
 			});
 
 			try {
@@ -104,6 +156,7 @@ router.post(
 					sessionId,
 					model,
 					jsonSchema: schema,
+					allowedTools,
 				});
 
 				// Parse the JSON response (CLI constrained decoding enforces valid JSON)

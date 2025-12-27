@@ -45,6 +45,7 @@ asyncio.run(main())
 - **Text Generation** — `koine.generate_text()` for simple prompts
 - **Streaming** — `koine.stream_text()` with async iterators
 - **Structured Output** — `koine.generate_object()` with Pydantic schema validation
+- **Tool Restrictions** — `allowed_tools` parameter to limit CLI tool access
 - **Streaming Structured Output** — `koine.stream_object()` with partial object streaming
 - **Type Safety** — Full type hints for all requests and responses
 - **Error Handling** — `KoineError` class with error codes
@@ -63,10 +64,10 @@ Creates a client instance with the given configuration. The config is validated 
 
 | Method | Description |
 |--------|-------------|
-| `koine.generate_text(*, prompt, system?, session_id?)` | Generate text from a prompt |
-| `koine.stream_text(*, prompt, system?, session_id?)` | Stream text via Server-Sent Events |
-| `koine.generate_object(*, prompt, schema, system?, session_id?)` | Extract structured data using a Pydantic model |
-| `koine.stream_object(*, prompt, schema, system?, session_id?)` | Stream structured data with partial updates |
+| `koine.generate_text(*, prompt, system?, session_id?, allowed_tools?)` | Generate text from a prompt |
+| `koine.stream_text(*, prompt, system?, session_id?, allowed_tools?)` | Stream text via Server-Sent Events |
+| `koine.generate_object(*, prompt, schema, system?, session_id?, allowed_tools?)` | Extract structured data using a Pydantic model |
+| `koine.stream_object(*, prompt, schema, system?, session_id?, allowed_tools?)` | Stream structured data via Server-Sent Events |
 
 ### Types
 
@@ -108,6 +109,7 @@ See the [SDK Guide](https://github.com/pattern-zones-co/koine/blob/main/docs/sdk
 - Configuration options
 - Streaming examples
 - Structured output with Pydantic
+- Tool restrictions
 - Error handling
 - Multi-turn conversations
 

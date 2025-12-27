@@ -40,3 +40,22 @@ Default limits:
 - `/generate-text`, `/generate-object`: 5 concurrent requests
 
 See [Environment Variables](environment-variables.md) to configure limits.
+
+## Tool Restrictions
+
+All POST endpoints accept an optional `allowedTools` parameter to restrict which Claude CLI tools can be used:
+
+```json
+{
+  "prompt": "Read the README file",
+  "allowedTools": ["Read", "Glob"]
+}
+```
+
+**Behavior:**
+- Gateway-level restrictions (`KOINE_ALLOWED_TOOLS`, `KOINE_DISALLOWED_TOOLS`) are the primary control
+- Request `allowedTools` can only further restrict, never expand beyond gateway limits
+- Gateway `KOINE_DISALLOWED_TOOLS` cannot be bypassed by requests
+- If all requested tools are blocked, returns `400` with code `NO_TOOLS_AVAILABLE`
+
+See [Environment Variables](environment-variables.md#tool-restrictions) for gateway configuration.
