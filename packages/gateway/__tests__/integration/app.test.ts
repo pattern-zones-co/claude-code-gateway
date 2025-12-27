@@ -7,18 +7,28 @@
 
 import { spawn } from "node:child_process";
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	afterSpawnCalled,
 	createCliResultJson,
 	createMockChildProcess,
 } from "../helpers.js";
 
-// Set required environment variable BEFORE any imports
+// Set required environment variables BEFORE any imports
 // Using vi.hoisted to ensure this runs at the earliest possible time
 const TEST_API_KEY = vi.hoisted(() => {
 	const key = "test-api-key-12345";
 	process.env.CLAUDE_CODE_GATEWAY_API_KEY = key;
+	// Use port 0 to let OS assign an available port (avoids conflicts in parallel runs)
+	process.env.PORT = "0";
 	return key;
 });
 
@@ -29,11 +39,18 @@ vi.mock("node:child_process", () => ({
 
 const mockSpawn = vi.mocked(spawn);
 
-// Import app after env var is set
-import app from "../../src/index.js";
+// Import app and server after env var is set
+import app, { server } from "../../src/index.js";
 
 describe("Claude Code Wrapper App (Integration)", () => {
 	const validAuthHeader = `Bearer ${TEST_API_KEY}`;
+
+	afterAll(async () => {
+		// Close the server to prevent resource leaks and port conflicts
+		await new Promise<void>((resolve, reject) => {
+			server.close((err) => (err ? reject(err) : resolve()));
+		});
+	});
 
 	beforeEach(() => {
 		vi.clearAllMocks();
