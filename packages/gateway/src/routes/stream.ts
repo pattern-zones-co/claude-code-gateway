@@ -4,7 +4,11 @@ import { v4 as uuidv4 } from "uuid";
 import { buildClaudeEnv } from "../cli.js";
 import { withConcurrencyLimit } from "../concurrency.js";
 import { logger } from "../logger.js";
-import { streamRequestSchema } from "../types.js";
+import {
+	type CliUsageInfo,
+	createUsageInfo,
+	streamRequestSchema,
+} from "../types.js";
 
 /** Default streaming timeout: 10 minutes (longer than non-streaming due to interactive nature) */
 const DEFAULT_STREAM_TIMEOUT_MS = 10 * 60 * 1000;
@@ -23,10 +27,7 @@ interface StreamAssistantMessage {
 interface StreamResultMessage {
 	type: "result";
 	session_id?: string;
-	usage?: {
-		input_tokens?: number;
-		output_tokens?: number;
-	};
+	usage?: CliUsageInfo;
 }
 
 /**
@@ -218,15 +219,9 @@ router.post(
 						}
 					} else if (parsed.type === "result") {
 						// Final result
-						const inputTokens = parsed.usage?.input_tokens ?? 0;
-						const outputTokens = parsed.usage?.output_tokens ?? 0;
 						safeSendEvent("result", {
 							sessionId: parsed.session_id || currentSessionId,
-							usage: {
-								inputTokens,
-								outputTokens,
-								totalTokens: inputTokens + outputTokens,
-							},
+							usage: createUsageInfo(parsed.usage),
 						});
 					}
 				} catch (error) {
@@ -263,15 +258,9 @@ router.post(
 				try {
 					const parsed = JSON.parse(lineBuffer) as StreamMessage;
 					if (parsed.type === "result") {
-						const inputTokens = parsed.usage?.input_tokens ?? 0;
-						const outputTokens = parsed.usage?.output_tokens ?? 0;
 						safeSendEvent("result", {
 							sessionId: parsed.session_id || currentSessionId,
-							usage: {
-								inputTokens,
-								outputTokens,
-								totalTokens: inputTokens + outputTokens,
-							},
+							usage: createUsageInfo(parsed.usage),
 						});
 					}
 				} catch {

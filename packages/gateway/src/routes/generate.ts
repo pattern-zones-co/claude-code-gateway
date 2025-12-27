@@ -36,8 +36,7 @@ router.post(
 				return;
 			}
 
-			const { prompt, system, sessionId, maxTokens, model, userEmail } =
-				parseResult.data;
+			const { prompt, system, sessionId, model, userEmail } = parseResult.data;
 
 			logger.info("generate-text", {
 				model: model || "default",
@@ -50,7 +49,6 @@ router.post(
 					prompt,
 					system,
 					sessionId,
-					maxTokens,
 					model,
 					userEmail,
 				});
@@ -92,7 +90,7 @@ router.post(
 				return;
 			}
 
-			const { prompt, system, schema, sessionId, maxTokens, model, userEmail } =
+			const { prompt, system, schema, sessionId, model, userEmail } =
 				parseResult.data;
 
 			logger.info("generate-object", {
@@ -106,13 +104,12 @@ router.post(
 					prompt,
 					system,
 					sessionId,
-					maxTokens,
 					model,
 					userEmail,
 					jsonSchema: schema,
 				});
 
-				// Parse the JSON response (guaranteed valid by constrained decoding)
+				// Parse the JSON response (CLI constrained decoding enforces valid JSON)
 				const parsedObject = parseJsonResponse(result.text);
 
 				res.json({
@@ -130,7 +127,7 @@ router.post(
 
 /**
  * Parses JSON from Claude's response.
- * With --json-schema constrained decoding, the output is guaranteed valid JSON.
+ * With --json-schema constrained decoding, the CLI enforces valid JSON output.
  */
 function parseJsonResponse(text: string): unknown {
 	return JSON.parse(text);

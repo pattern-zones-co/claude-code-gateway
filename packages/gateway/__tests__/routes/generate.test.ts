@@ -344,5 +344,89 @@ describe("Generate Routes", () => {
 			const promptArg = args[args.length - 1];
 			expect(promptArg).toBe("Generate a person");
 		});
+
+		it("handles structured_output from CLI (native --json-schema response)", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/generate-object")
+				.send({ prompt: "Generate a person", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// CLI returns structured_output when --json-schema is used
+				simulateCliSuccess(
+					mockProc,
+					JSON.stringify({
+						type: "result",
+						structured_output: { name: "Alice", age: 30 },
+						usage: { input_tokens: 10, output_tokens: 15 },
+						session_id: "structured-session-456",
+					}),
+				);
+			});
+
+			const res = await responsePromise;
+
+			expect(res.status).toBe(200);
+			expect(res.body.object).toEqual({ name: "Alice", age: 30 });
+			// structured_output is stringified, then parsed back
+			expect(res.body.rawText).toBe('{"name":"Alice","age":30}');
+			expect(res.body.usage.inputTokens).toBe(10);
+			expect(res.body.usage.outputTokens).toBe(15);
+			expect(res.body.sessionId).toBe("structured-session-456");
+		});
+
+		it("handles structured_output with nested objects", async () => {
+			const nestedSchema = {
+				type: "object",
+				properties: {
+					user: {
+						type: "object",
+						properties: {
+							name: { type: "string" },
+							address: {
+								type: "object",
+								properties: {
+									city: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+			};
+
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/generate-object")
+				.send({ prompt: "Generate nested data", schema: nestedSchema });
+
+			const nestedObject = {
+				user: {
+					name: "Bob",
+					address: { city: "Springfield" },
+				},
+			};
+
+			afterSpawnCalled(mockSpawn, () => {
+				simulateCliSuccess(
+					mockProc,
+					JSON.stringify({
+						type: "result",
+						structured_output: nestedObject,
+						usage: { input_tokens: 12, output_tokens: 18 },
+					}),
+				);
+			});
+
+			const res = await responsePromise;
+
+			expect(res.status).toBe(200);
+			expect(res.body.object).toEqual(nestedObject);
+		});
 	});
 });

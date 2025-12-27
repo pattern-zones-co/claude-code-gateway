@@ -281,6 +281,115 @@ describe("CLI Module", () => {
 				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
 			);
 		});
+
+		it("uses structured_output when present (--json-schema response)", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const resultPromise = executeClaudeCli({
+				prompt: "Generate a person",
+				jsonSchema: {
+					type: "object",
+					properties: { name: { type: "string" } },
+				},
+			});
+
+			// CLI returns structured_output when --json-schema is used
+			simulateCliSuccess(
+				mockProc,
+				JSON.stringify({
+					type: "result",
+					structured_output: { name: "Alice", age: 30 },
+					usage: { input_tokens: 15, output_tokens: 20 },
+					session_id: "structured-session-123",
+				}),
+			);
+
+			const result = await resultPromise;
+
+			// structured_output should be stringified
+			expect(result.text).toBe('{"name":"Alice","age":30}');
+			expect(result.usage.inputTokens).toBe(15);
+			expect(result.usage.outputTokens).toBe(20);
+			expect(result.sessionId).toBe("structured-session-123");
+		});
+
+		it("falls back to result when structured_output is not present", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const resultPromise = executeClaudeCli({ prompt: "Test" });
+
+			// Standard result without structured_output
+			simulateCliSuccess(
+				mockProc,
+				JSON.stringify({
+					type: "result",
+					result: "Plain text response",
+					usage: { input_tokens: 5, output_tokens: 10 },
+				}),
+			);
+
+			const result = await resultPromise;
+
+			expect(result.text).toBe("Plain text response");
+		});
+
+		it("handles structured_output with complex nested objects", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const resultPromise = executeClaudeCli({
+				prompt: "Generate user",
+				jsonSchema: { type: "object" },
+			});
+
+			const complexObject = {
+				user: {
+					name: "Bob",
+					addresses: [
+						{ street: "123 Main St", city: "Springfield" },
+						{ street: "456 Oak Ave", city: "Shelbyville" },
+					],
+				},
+			};
+
+			simulateCliSuccess(
+				mockProc,
+				JSON.stringify({
+					type: "result",
+					structured_output: complexObject,
+					usage: { input_tokens: 10, output_tokens: 25 },
+				}),
+			);
+
+			const result = await resultPromise;
+
+			expect(JSON.parse(result.text)).toEqual(complexObject);
+		});
+
+		it("handles structured_output with array values", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const resultPromise = executeClaudeCli({
+				prompt: "Generate list",
+				jsonSchema: { type: "array" },
+			});
+
+			simulateCliSuccess(
+				mockProc,
+				JSON.stringify({
+					type: "result",
+					structured_output: ["one", "two", "three"],
+					usage: { input_tokens: 5, output_tokens: 5 },
+				}),
+			);
+
+			const result = await resultPromise;
+
+			expect(JSON.parse(result.text)).toEqual(["one", "two", "three"]);
+		});
 	});
 
 	describe("ClaudeCliError", () => {
