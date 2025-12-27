@@ -227,8 +227,18 @@ router.post(
 									parsed: partialObject,
 								});
 							}
-						} catch {
-							// Partial JSON not yet parseable, continue accumulating
+						} catch (parseError) {
+							// SyntaxError is expected when JSON is incomplete - continue accumulating
+							// Log unexpected errors (e.g., TypeError from stringify)
+							if (!(parseError instanceof SyntaxError)) {
+								logger.warn("Unexpected error during partial JSON parsing", {
+									error:
+										parseError instanceof Error
+											? parseError.message
+											: String(parseError),
+									accumulatedLength: accumulatedJson.length,
+								});
+							}
 						}
 					} else if (parsed.type === "result") {
 						// Final result - emit the complete object
@@ -243,11 +253,28 @@ router.post(
 								safeSendEvent("object", {
 									object: finalObject,
 								});
-							} catch {
+							} catch (fallbackError) {
 								logger.warn("Failed to parse final accumulated JSON", {
 									accumulatedLength: accumulatedJson.length,
+									error:
+										fallbackError instanceof Error
+											? fallbackError.message
+											: String(fallbackError),
+								});
+								safeSendEvent("error", {
+									error: "Failed to parse final JSON object",
+									code: "PARSE_ERROR",
 								});
 							}
+						} else {
+							// No structured_output and no accumulated JSON - unexpected state
+							logger.warn(
+								"Result received without structured_output or accumulated JSON",
+							);
+							safeSendEvent("error", {
+								error: "No object data received from CLI",
+								code: "PARSE_ERROR",
+							});
 						}
 
 						safeSendEvent("result", {
@@ -256,13 +283,21 @@ router.post(
 						});
 					}
 				} catch (error) {
-					// Only catch JSON parse errors - other errors should propagate
 					if (error instanceof SyntaxError) {
+						// Non-JSON line from CLI - log but continue processing
 						logger.warn("Stream-object: non-JSON line received", {
 							linePreview: line.slice(0, 100),
 						});
 					} else {
-						throw error;
+						// Unexpected error - log and notify client, but continue stream
+						logger.error("Unexpected error processing stream line", {
+							error: error instanceof Error ? error.message : String(error),
+							linePreview: line.slice(0, 100),
+						});
+						safeSendEvent("error", {
+							error: `Stream processing error: ${error instanceof Error ? error.message : String(error)}`,
+							code: "INTERNAL_ERROR",
+						});
 					}
 				}
 			}
@@ -298,16 +333,31 @@ router.post(
 							usage: createUsageInfo(parsed.usage),
 						});
 					}
-				} catch {
-					// Log but don't fail - incomplete JSON in final buffer is expected
-					// when the CLI exits mid-stream (e.g., user cancellation)
-					logger.info(
-						"Final buffer parse incomplete (expected during interrupts)",
-						{
+				} catch (bufferError) {
+					// Incomplete buffer is expected during interrupts (non-zero exit or signal)
+					// but may indicate a real error on clean exit
+					const isInterrupt = code !== 0 || signal !== null;
+					if (isInterrupt) {
+						logger.info(
+							"Final buffer parse incomplete (expected during interrupts)",
+							{
+								code,
+								signal,
+								bufferLength: lineBuffer.length,
+								bufferPreview: lineBuffer.slice(0, 100),
+							},
+						);
+					} else {
+						// Clean exit but unparseable buffer - this is unexpected
+						logger.warn("Unparseable data in buffer after clean CLI exit", {
 							bufferLength: lineBuffer.length,
 							bufferPreview: lineBuffer.slice(0, 100),
-						},
-					);
+							error:
+								bufferError instanceof Error
+									? bufferError.message
+									: String(bufferError),
+						});
+					}
 				}
 			}
 

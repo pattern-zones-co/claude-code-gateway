@@ -532,5 +532,152 @@ describe("Stream Object Route", () => {
 			// Should only have one partial-object event since empty delta doesn't change state
 			expect(partialEvents.length).toBe(1);
 		});
+
+		it("processes remaining buffer data on CLI close", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Hello", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// Send a result message without trailing newline (stays in buffer)
+				const resultMessage = createStreamResultMessage({
+					structured_output: { name: "BufferTest", age: 42 },
+				});
+				mockProc.stdout.emit("data", Buffer.from(resultMessage));
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			const objectEvent = events.find((e) => e.event === "object");
+			expect(objectEvent).toBeDefined();
+			expect(
+				(objectEvent?.data as { object: { name: string } }).object.name,
+			).toBe("BufferTest");
+		});
+
+		it("handles non-JSON lines gracefully", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Hello", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// Send malformed JSON line followed by valid result
+				mockProc.stdout.emit("data", Buffer.from("not valid json at all\n"));
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(
+						`${createStreamResultMessage({
+							structured_output: { name: "AfterMalformed", age: 1 },
+						})}\n`,
+					),
+				);
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			// Should still get the valid object event after malformed line
+			const objectEvent = events.find((e) => e.event === "object");
+			expect(objectEvent).toBeDefined();
+			expect(
+				(objectEvent?.data as { object: { name: string } }).object.name,
+			).toBe("AfterMalformed");
+		});
+
+		it("emits error when structured_output missing and JSON parse fails", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Hello", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// Send malformed JSON delta that can't be parsed
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(`${createStreamEventDelta("{{{invalid json")}\n`),
+				);
+				// Send result without structured_output - should trigger fallback parse failure
+				mockProc.stdout.emit(
+					"data",
+					Buffer.from(`${createStreamResultMessage()}\n`),
+				);
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			const events = parseSSEResponse(res.text);
+
+			// Should emit error event for parse failure
+			const errorEvent = events.find((e) => e.event === "error");
+			expect(errorEvent).toBeDefined();
+			expect((errorEvent?.data as { code: string }).code).toBe("PARSE_ERROR");
+		});
+
+		it("calls stdin.end() after spawning CLI", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({ prompt: "Hello", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				mockProc.emit("close", 0, null);
+			});
+
+			await responsePromise;
+
+			expect(mockProc.stdin.end).toHaveBeenCalled();
+		});
+
+		it("rejects schema without valid JSON Schema keywords", async () => {
+			const app = createTestApp();
+
+			const res = await request(app)
+				.post("/stream-object")
+				.send({ prompt: "Hello", schema: { foo: "bar" } }); // Not a valid JSON Schema
+
+			expect(res.status).toBe(400);
+			expect(res.body).toMatchObject({
+				error: "Invalid request body",
+				code: "VALIDATION_ERROR",
+			});
+		});
+
+		it("accepts valid JSON Schema with type property", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/stream-object")
+				.send({
+					prompt: "Hello",
+					schema: { type: "object", properties: { name: { type: "string" } } },
+				});
+
+			afterSpawnCalled(mockSpawn, () => {
+				mockProc.emit("close", 0, null);
+			});
+
+			const res = await responsePromise;
+			// Should not be a 400 error
+			expect(res.headers["content-type"]).toBe("text/event-stream");
+		});
 	});
 });
