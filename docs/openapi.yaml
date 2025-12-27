@@ -37,13 +37,14 @@ components:
           type: string
         sessionId:
           type: string
-        maxTokens:
-          type: number
         model:
           type: string
         userEmail:
           type: string
           format: email
+        maxTokens:
+          type: integer
+          exclusiveMinimum: 0
       required:
         - prompt
     GenerateObjectRequest:
@@ -53,18 +54,19 @@ components:
           type: string
         prompt:
           type: string
-        schema:
-          type: object
-          additionalProperties: {}
         sessionId:
           type: string
-        maxTokens:
-          type: number
         model:
           type: string
         userEmail:
           type: string
           format: email
+        schema:
+          type: object
+          additionalProperties: {}
+        maxTokens:
+          type: integer
+          exclusiveMinimum: 0
       required:
         - prompt
         - schema
@@ -88,11 +90,14 @@ components:
       type: object
       properties:
         inputTokens:
-          type: number
+          type: integer
+          minimum: 0
         outputTokens:
-          type: number
+          type: integer
+          minimum: 0
         totalTokens:
-          type: number
+          type: integer
+          minimum: 0
       required:
         - inputTokens
         - outputTokens
@@ -106,11 +111,14 @@ components:
           type: object
           properties:
             inputTokens:
-              type: number
+              type: integer
+              minimum: 0
             outputTokens:
-              type: number
+              type: integer
+              minimum: 0
             totalTokens:
-              type: number
+              type: integer
+              minimum: 0
           required:
             - inputTokens
             - outputTokens
@@ -131,11 +139,14 @@ components:
           type: object
           properties:
             inputTokens:
-              type: number
+              type: integer
+              minimum: 0
             outputTokens:
-              type: number
+              type: integer
+              minimum: 0
             totalTokens:
-              type: number
+              type: integer
+              minimum: 0
           required:
             - inputTokens
             - outputTokens
@@ -375,13 +386,14 @@ paths:
                   type: string
                 sessionId:
                   type: string
-                maxTokens:
-                  type: number
                 model:
                   type: string
                 userEmail:
                   type: string
                   format: email
+                maxTokens:
+                  type: integer
+                  exclusiveMinimum: 0
               required:
                 - prompt
       responses:
@@ -398,11 +410,14 @@ paths:
                     type: object
                     properties:
                       inputTokens:
-                        type: number
+                        type: integer
+                        minimum: 0
                       outputTokens:
-                        type: number
+                        type: integer
+                        minimum: 0
                       totalTokens:
-                        type: number
+                        type: integer
+                        minimum: 0
                     required:
                       - inputTokens
                       - outputTokens
@@ -487,18 +502,19 @@ paths:
                   type: string
                 prompt:
                   type: string
-                schema:
-                  type: object
-                  additionalProperties: {}
                 sessionId:
                   type: string
-                maxTokens:
-                  type: number
                 model:
                   type: string
                 userEmail:
                   type: string
                   format: email
+                schema:
+                  type: object
+                  additionalProperties: {}
+                maxTokens:
+                  type: integer
+                  exclusiveMinimum: 0
               required:
                 - prompt
                 - schema
@@ -517,11 +533,14 @@ paths:
                     type: object
                     properties:
                       inputTokens:
-                        type: number
+                        type: integer
+                        minimum: 0
                       outputTokens:
-                        type: number
+                        type: integer
+                        minimum: 0
                       totalTokens:
-                        type: number
+                        type: integer
+                        minimum: 0
                     required:
                       - inputTokens
                       - outputTokens
