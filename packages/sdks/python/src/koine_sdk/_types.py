@@ -54,3 +54,16 @@ class SSEErrorEvent(BaseModel):
 
     error: str
     code: str | None = None
+
+
+class SSEPartialObjectEvent(BaseModel):
+    """SSE partial-object event from stream-object endpoint (internal)."""
+
+    partial: str
+    parsed: object
+
+
+class SSEObjectEvent(BaseModel):
+    """SSE object event from stream-object endpoint (internal)."""
+
+    object: object

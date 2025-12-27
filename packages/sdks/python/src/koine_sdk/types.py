@@ -96,3 +96,43 @@ class StreamTextResult:
     async def text(self) -> str:
         """Full accumulated text. Resolves when stream completes."""
         return await self._text_future
+
+
+@dataclass
+class StreamObjectResult(Generic[T]):
+    """Result from streaming object generation.
+
+    The partial_object_stream yields partial objects as they arrive.
+    session_id(), usage(), and object() are async methods that resolve
+    at different times during the stream.
+
+    Important: You must consume partial_object_stream for the futures to resolve.
+    The futures are set as SSE events are processed during iteration.
+    """
+
+    partial_object_stream: AsyncIterator[T]
+    """Async iterator of partial objects as they arrive"""
+
+    _session_id_future: asyncio.Future[str]
+    """Future that resolves with session ID (early in stream)"""
+
+    _usage_future: asyncio.Future[KoineUsage]
+    """Future that resolves with usage stats (when stream completes)"""
+
+    _object_future: asyncio.Future[T]
+    """Future that resolves with final validated object"""
+
+    async def session_id(self) -> str:
+        """Session ID for conversation continuity.
+
+        Resolves early in stream, after session event.
+        """
+        return await self._session_id_future
+
+    async def usage(self) -> KoineUsage:
+        """Usage stats. Resolves when stream completes."""
+        return await self._usage_future
+
+    async def object(self) -> T:
+        """Final validated object. Resolves when stream completes."""
+        return await self._object_future
