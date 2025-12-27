@@ -88,11 +88,29 @@ router.post(
 		} = parseResult.data;
 
 		// Resolve allowed tools: intersection of gateway config and request
-		const allowedTools = resolveAllowedTools(
-			gatewayConfig.allowedTools,
-			gatewayConfig.disallowedTools,
-			requestAllowedTools,
-		);
+		const allowedTools = resolveAllowedTools({
+			gatewayAllowed: gatewayConfig.allowedTools,
+			gatewayDisallowed: gatewayConfig.disallowedTools,
+			requestAllowed: requestAllowedTools,
+		});
+
+		// Empty array means all requested tools were disallowed
+		// Must check before setting SSE headers
+		if (allowedTools && allowedTools.length === 0) {
+			res.status(400).json({
+				error: "No valid tools available: all requested tools are disallowed",
+				code: "NO_TOOLS_AVAILABLE",
+			});
+			return;
+		}
+
+		logger.info("stream", {
+			model: model || "default",
+			hasSystem: !!system,
+			promptLength: prompt.length,
+			requestedTools: requestAllowedTools,
+			resolvedTools: allowedTools,
+		});
 
 		// Set up SSE headers
 		res.setHeader("Content-Type", "text/event-stream");
@@ -352,7 +370,7 @@ router.post(
  * Builds CLI arguments for streaming mode.
  * Note: --verbose is required when using --output-format stream-json with --print
  */
-function buildStreamArgs(options: {
+export function buildStreamArgs(options: {
 	prompt: string;
 	system?: string;
 	sessionId?: string;

@@ -47,17 +47,27 @@ router.post(
 			} = parseResult.data;
 
 			// Resolve allowed tools: intersection of gateway config and request
-			const allowedTools = resolveAllowedTools(
-				gatewayConfig.allowedTools,
-				gatewayConfig.disallowedTools,
-				requestAllowedTools,
-			);
+			const allowedTools = resolveAllowedTools({
+				gatewayAllowed: gatewayConfig.allowedTools,
+				gatewayDisallowed: gatewayConfig.disallowedTools,
+				requestAllowed: requestAllowedTools,
+			});
+
+			// Empty array means all requested tools were disallowed
+			if (allowedTools && allowedTools.length === 0) {
+				res.status(400).json({
+					error: "No valid tools available: all requested tools are disallowed",
+					code: "NO_TOOLS_AVAILABLE",
+				});
+				return;
+			}
 
 			logger.info("generate-text", {
 				model: model || "default",
 				hasSystem: !!system,
 				promptLength: prompt.length,
-				allowedToolsCount: allowedTools?.length,
+				requestedTools: requestAllowedTools,
+				resolvedTools: allowedTools,
 			});
 
 			try {
@@ -116,17 +126,27 @@ router.post(
 			} = parseResult.data;
 
 			// Resolve allowed tools: intersection of gateway config and request
-			const allowedTools = resolveAllowedTools(
-				gatewayConfig.allowedTools,
-				gatewayConfig.disallowedTools,
-				requestAllowedTools,
-			);
+			const allowedTools = resolveAllowedTools({
+				gatewayAllowed: gatewayConfig.allowedTools,
+				gatewayDisallowed: gatewayConfig.disallowedTools,
+				requestAllowed: requestAllowedTools,
+			});
+
+			// Empty array means all requested tools were disallowed
+			if (allowedTools && allowedTools.length === 0) {
+				res.status(400).json({
+					error: "No valid tools available: all requested tools are disallowed",
+					code: "NO_TOOLS_AVAILABLE",
+				});
+				return;
+			}
 
 			logger.info("generate-object", {
 				model: model || "default",
 				hasSystem: !!system,
 				promptLength: prompt.length,
-				allowedToolsCount: allowedTools?.length,
+				requestedTools: requestAllowedTools,
+				resolvedTools: allowedTools,
 			});
 
 			try {

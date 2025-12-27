@@ -54,31 +54,44 @@ describe("Config Module", () => {
 		});
 
 		it("returns undefined for invalid JSON", async () => {
-			const consoleSpy = vi
-				.spyOn(console, "error")
-				.mockImplementation(() => {});
+			const stderrSpy = vi
+				.spyOn(process.stderr, "write")
+				.mockImplementation(() => true);
 			const { parseToolList } = await import("../src/config.js");
 
 			expect(parseToolList("not json")).toBeUndefined();
-			expect(consoleSpy).toHaveBeenCalledWith(
+			expect(stderrSpy).toHaveBeenCalledWith(
 				expect.stringContaining("Failed to parse tool list as JSON"),
 			);
 
-			consoleSpy.mockRestore();
+			stderrSpy.mockRestore();
 		});
 
 		it("returns undefined for non-array JSON", async () => {
-			const consoleSpy = vi
-				.spyOn(console, "error")
-				.mockImplementation(() => {});
+			const stderrSpy = vi
+				.spyOn(process.stderr, "write")
+				.mockImplementation(() => true);
 			const { parseToolList } = await import("../src/config.js");
 
 			expect(parseToolList('{"tool": "Read"}')).toBeUndefined();
-			expect(consoleSpy).toHaveBeenCalledWith(
+			expect(stderrSpy).toHaveBeenCalledWith(
 				expect.stringContaining("Invalid tool list format (expected array)"),
 			);
 
-			consoleSpy.mockRestore();
+			stderrSpy.mockRestore();
+		});
+
+		it("returns undefined for whitespace-only string", async () => {
+			const stderrSpy = vi
+				.spyOn(process.stderr, "write")
+				.mockImplementation(() => true);
+			const { parseToolList } = await import("../src/config.js");
+
+			// Whitespace-only strings are not valid JSON
+			expect(parseToolList("   ")).toBeUndefined();
+			expect(parseToolList("\n\t")).toBeUndefined();
+
+			stderrSpy.mockRestore();
 		});
 
 		it("filters out non-string values from array", async () => {

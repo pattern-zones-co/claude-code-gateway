@@ -145,6 +145,7 @@ export const errorCodeSchema = z.enum([
 	"SPAWN_ERROR",
 	"PARSE_ERROR",
 	"CONCURRENCY_LIMIT_ERROR",
+	"NO_TOOLS_AVAILABLE",
 ]);
 
 export const errorResponseSchema = z.object({

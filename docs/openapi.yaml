@@ -39,6 +39,10 @@ components:
           type: string
         model:
           type: string
+        allowedTools:
+          type: array
+          items:
+            type: string
         maxTokens:
           type: integer
           exclusiveMinimum: 0
@@ -55,6 +59,10 @@ components:
           type: string
         model:
           type: string
+        allowedTools:
+          type: array
+          items:
+            type: string
         schema:
           type: object
           properties:
@@ -104,6 +112,10 @@ components:
           type: string
         model:
           type: string
+        allowedTools:
+          type: array
+          items:
+            type: string
       required:
         - prompt
     StreamObjectRequest:
@@ -117,6 +129,10 @@ components:
           type: string
         model:
           type: string
+        allowedTools:
+          type: array
+          items:
+            type: string
         schema:
           type: object
           properties:
@@ -232,6 +248,7 @@ components:
             - SPAWN_ERROR
             - PARSE_ERROR
             - CONCURRENCY_LIMIT_ERROR
+            - NO_TOOLS_AVAILABLE
         rawText:
           type: string
       required:
@@ -447,6 +464,10 @@ paths:
                   type: string
                 model:
                   type: string
+                allowedTools:
+                  type: array
+                  items:
+                    type: string
                 maxTokens:
                   type: integer
                   exclusiveMinimum: 0
@@ -562,6 +583,10 @@ paths:
                   type: string
                 model:
                   type: string
+                allowedTools:
+                  type: array
+                  items:
+                    type: string
                 schema:
                   type: object
                   properties:
@@ -704,6 +729,10 @@ paths:
                   type: string
                 model:
                   type: string
+                allowedTools:
+                  type: array
+                  items:
+                    type: string
               required:
                 - prompt
       responses:
@@ -774,6 +803,10 @@ paths:
                   type: string
                 model:
                   type: string
+                allowedTools:
+                  type: array
+                  items:
+                    type: string
                 schema:
                   type: object
                   properties:
