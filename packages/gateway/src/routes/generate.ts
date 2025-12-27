@@ -36,8 +36,7 @@ router.post(
 				return;
 			}
 
-			const { prompt, system, sessionId, maxTokens, model, userEmail } =
-				parseResult.data;
+			const { prompt, system, sessionId, model, userEmail } = parseResult.data;
 
 			logger.info("generate-text", {
 				model: model || "default",
@@ -50,7 +49,6 @@ router.post(
 					prompt,
 					system,
 					sessionId,
-					maxTokens,
 					model,
 					userEmail,
 				});
@@ -71,7 +69,7 @@ router.post(
  * POST /generate-object
  *
  * Generates structured JSON response from Claude CLI.
- * The schema is passed in the request to instruct Claude to output valid JSON.
+ * Uses the --json-schema flag for constrained decoding at the model level.
  */
 router.post(
 	"/generate-object",
@@ -92,7 +90,7 @@ router.post(
 				return;
 			}
 
-			const { prompt, system, schema, sessionId, maxTokens, model, userEmail } =
+			const { prompt, system, schema, sessionId, model, userEmail } =
 				parseResult.data;
 
 			logger.info("generate-object", {
@@ -101,30 +99,17 @@ router.post(
 				promptLength: prompt.length,
 			});
 
-			// Build enhanced prompt that instructs Claude to output JSON matching schema
-			const schemaString = JSON.stringify(schema, null, 2);
-			const enhancedPrompt = `${prompt}
-
-IMPORTANT: You MUST respond with ONLY valid JSON that matches this schema. No markdown, no explanations, just the JSON object.
-
-JSON Schema:
-${schemaString}`;
-
-			const enhancedSystem = system
-				? `${system}\n\nYou are a JSON generator. Always respond with valid JSON matching the provided schema.`
-				: "You are a JSON generator. Always respond with valid JSON matching the provided schema.";
-
 			try {
 				const result = await executeClaudeCli({
-					prompt: enhancedPrompt,
-					system: enhancedSystem,
+					prompt,
+					system,
 					sessionId,
-					maxTokens,
 					model,
 					userEmail,
+					jsonSchema: schema,
 				});
 
-				// Parse the JSON response
+				// Parse the JSON response (CLI constrained decoding enforces valid JSON)
 				const parsedObject = parseJsonResponse(result.text);
 
 				res.json({
@@ -141,54 +126,11 @@ ${schemaString}`;
 );
 
 /**
- * Attempts to parse JSON from Claude's response.
- * Handles common edge cases like markdown code blocks.
+ * Parses JSON from Claude's response.
+ * With --json-schema constrained decoding, the CLI enforces valid JSON output.
  */
 function parseJsonResponse(text: string): unknown {
-	// Try direct parse first
-	try {
-		return JSON.parse(text);
-	} catch {
-		// Continue to fallback strategies
-	}
-
-	// Strip markdown code blocks if present
-	const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-	if (jsonBlockMatch) {
-		try {
-			return JSON.parse(jsonBlockMatch[1].trim());
-		} catch {
-			// Continue to next strategy
-		}
-	}
-
-	// Try to find JSON object in the response using non-greedy global match
-	// Iterate through candidates to handle cases like `{"a":1} text {"b":2}`
-	const objectMatches = text.match(/\{[\s\S]*?\}/g);
-	if (objectMatches) {
-		for (const match of objectMatches) {
-			try {
-				return JSON.parse(match);
-			} catch {
-				// Try next candidate
-			}
-		}
-	}
-
-	// Try to find JSON array in the response using non-greedy global match
-	const arrayMatches = text.match(/\[[\s\S]*?\]/g);
-	if (arrayMatches) {
-		for (const match of arrayMatches) {
-			try {
-				return JSON.parse(match);
-			} catch {
-				// Try next candidate
-			}
-		}
-	}
-
-	// Don't include raw response text in error - may contain sensitive data
-	throw new Error("Failed to parse JSON from response");
+	return JSON.parse(text);
 }
 
 /**

@@ -4,7 +4,11 @@ import { v4 as uuidv4 } from "uuid";
 import { buildClaudeEnv } from "../cli.js";
 import { withConcurrencyLimit } from "../concurrency.js";
 import { logger } from "../logger.js";
-import { streamRequestSchema } from "../types.js";
+import {
+	type CliUsageInfo,
+	createUsageInfo,
+	streamRequestSchema,
+} from "../types.js";
 
 /** Default streaming timeout: 10 minutes (longer than non-streaming due to interactive nature) */
 const DEFAULT_STREAM_TIMEOUT_MS = 10 * 60 * 1000;
@@ -23,8 +27,7 @@ interface StreamAssistantMessage {
 interface StreamResultMessage {
 	type: "result";
 	session_id?: string;
-	total_tokens_in?: number;
-	total_tokens_out?: number;
+	usage?: CliUsageInfo;
 }
 
 /**
@@ -218,13 +221,7 @@ router.post(
 						// Final result
 						safeSendEvent("result", {
 							sessionId: parsed.session_id || currentSessionId,
-							usage: {
-								inputTokens: parsed.total_tokens_in || 0,
-								outputTokens: parsed.total_tokens_out || 0,
-								totalTokens:
-									(parsed.total_tokens_in || 0) +
-									(parsed.total_tokens_out || 0),
-							},
+							usage: createUsageInfo(parsed.usage),
 						});
 					}
 				} catch (error) {
@@ -263,13 +260,7 @@ router.post(
 					if (parsed.type === "result") {
 						safeSendEvent("result", {
 							sessionId: parsed.session_id || currentSessionId,
-							usage: {
-								inputTokens: parsed.total_tokens_in || 0,
-								outputTokens: parsed.total_tokens_out || 0,
-								totalTokens:
-									(parsed.total_tokens_in || 0) +
-									(parsed.total_tokens_out || 0),
-							},
+							usage: createUsageInfo(parsed.usage),
 						});
 					}
 				} catch {

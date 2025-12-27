@@ -1,7 +1,12 @@
 import { spawn } from "node:child_process";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "./logger.js";
-import type { ClaudeCliOutput, ErrorCode, UsageInfo } from "./types.js";
+import {
+	type ClaudeCliOutput,
+	type ErrorCode,
+	type UsageInfo,
+	createUsageInfo,
+} from "./types.js";
 
 /**
  * Builds environment variables for Claude CLI with auth precedence.
@@ -48,21 +53,22 @@ export interface ClaudeCliOptions {
 	prompt: string;
 	system?: string;
 	sessionId?: string;
-	maxTokens?: number;
-	outputFormat?: "json" | "text" | "stream-json";
 	/** Timeout in milliseconds. Default: 5 minutes */
 	timeoutMs?: number;
 	/** Model alias (e.g., 'sonnet', 'haiku') or full name */
 	model?: string;
 	/** User email for tool proxy access (enables Claude skills to call Inbox Zero tools) */
 	userEmail?: string;
+	/** JSON schema for constrained decoding (CLI enforces valid JSON output) */
+	jsonSchema?: Record<string, unknown>;
 }
 
 export interface ClaudeCliResult {
 	text: string;
 	usage: UsageInfo;
 	sessionId: string;
-	rawOutput: ClaudeCliOutput | null;
+	/** Raw CLI output - always present on success (we throw on parse failure) */
+	rawOutput: ClaudeCliOutput;
 }
 
 /**
@@ -146,7 +152,10 @@ export async function executeClaudeCli(
 			}
 
 			try {
-				const result = parseCliOutput(stdout, options.sessionId);
+				const result = parseCliOutput(stdout, {
+					existingSessionId: options.sessionId,
+					jsonSchemaProvided: !!options.jsonSchema,
+				});
 				resolve(result);
 			} catch (error) {
 				reject(
@@ -202,10 +211,20 @@ function buildCliArgs(options: ClaudeCliOptions): string[] {
 	// Note: --max-tokens is not supported by Claude CLI
 	// Use --max-budget-usd for budget control if needed in future
 
+	// JSON schema for constrained decoding
+	if (options.jsonSchema) {
+		args.push("--json-schema", JSON.stringify(options.jsonSchema));
+	}
+
 	// The prompt itself
 	args.push(options.prompt);
 
 	return args;
+}
+
+interface ParseOptions {
+	existingSessionId?: string;
+	jsonSchemaProvided?: boolean;
 }
 
 /**
@@ -215,8 +234,9 @@ function buildCliArgs(options: ClaudeCliOptions): string[] {
  */
 function parseCliOutput(
 	stdout: string,
-	existingSessionId?: string,
+	options: ParseOptions,
 ): ClaudeCliResult {
+	const { existingSessionId, jsonSchemaProvided } = options;
 	// Handle multiple JSON objects (streaming output produces multiple lines)
 	const lines = stdout.trim().split("\n").filter(Boolean);
 
@@ -253,19 +273,29 @@ function parseCliOutput(
 		);
 	}
 
-	// Extract usage - prefer new format, fall back to legacy
-	const inputTokens =
-		resultOutput.usage?.input_tokens ?? resultOutput.total_tokens_in ?? 0;
-	const outputTokens =
-		resultOutput.usage?.output_tokens ?? resultOutput.total_tokens_out ?? 0;
+	// For structured output (--json-schema), use the structured_output field
+	// Otherwise, fall back to the result field
+	const hasStructuredOutput = resultOutput.structured_output !== undefined;
+
+	// Warn if jsonSchema was provided but CLI didn't return structured_output
+	// This could indicate a CLI version mismatch or unexpected response format
+	if (jsonSchemaProvided && !hasStructuredOutput) {
+		logger.warn(
+			"jsonSchema was provided but CLI response lacks structured_output field",
+			{
+				resultKeys: Object.keys(resultOutput),
+				hasResult: "result" in resultOutput,
+			},
+		);
+	}
+
+	const text = hasStructuredOutput
+		? JSON.stringify(resultOutput.structured_output)
+		: resultOutput.result || "";
 
 	return {
-		text: resultOutput.result || "",
-		usage: {
-			inputTokens,
-			outputTokens,
-			totalTokens: inputTokens + outputTokens,
-		},
+		text,
+		usage: createUsageInfo(resultOutput.usage),
 		sessionId: resultOutput.session_id || existingSessionId || uuidv4(),
 		rawOutput: resultOutput,
 	};

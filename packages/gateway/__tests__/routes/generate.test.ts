@@ -76,8 +76,7 @@ describe("Generate Routes", () => {
 					mockProc,
 					createCliResultJson({
 						result: "Hi there!",
-						total_tokens_in: 5,
-						total_tokens_out: 10,
+						usage: { input_tokens: 5, output_tokens: 10 },
 						session_id: "session-123",
 					}),
 				);
@@ -244,54 +243,6 @@ describe("Generate Routes", () => {
 			expect(res.body.sessionId).toBeDefined();
 		});
 
-		it("extracts JSON from markdown code blocks", async () => {
-			const mockProc = createMockChildProcess();
-			mockSpawn.mockReturnValue(mockProc as never);
-
-			const app = createTestApp();
-			const responsePromise = request(app)
-				.post("/generate-object")
-				.send({ prompt: "Generate a person", schema: validSchema });
-
-			afterSpawnCalled(mockSpawn, () => {
-				simulateCliSuccess(
-					mockProc,
-					createCliResultJson({
-						result: '```json\n{"name": "Bob"}\n```',
-					}),
-				);
-			});
-
-			const res = await responsePromise;
-
-			expect(res.status).toBe(200);
-			expect(res.body.object).toEqual({ name: "Bob" });
-		});
-
-		it("extracts JSON object from mixed text", async () => {
-			const mockProc = createMockChildProcess();
-			mockSpawn.mockReturnValue(mockProc as never);
-
-			const app = createTestApp();
-			const responsePromise = request(app)
-				.post("/generate-object")
-				.send({ prompt: "Generate a person", schema: validSchema });
-
-			afterSpawnCalled(mockSpawn, () => {
-				simulateCliSuccess(
-					mockProc,
-					createCliResultJson({
-						result: 'Here is the result: {"name": "Charlie"} - done!',
-					}),
-				);
-			});
-
-			const res = await responsePromise;
-
-			expect(res.status).toBe(200);
-			expect(res.body.object).toEqual({ name: "Charlie" });
-		});
-
 		it("handles JSON arrays", async () => {
 			const arraySchema = { type: "array", items: { type: "string" } };
 			const mockProc = createMockChildProcess();
@@ -339,10 +290,11 @@ describe("Generate Routes", () => {
 
 			expect(res.status).toBe(500);
 			expect(res.body.code).toBe("INTERNAL_ERROR");
-			expect(res.body.error).toContain("Failed to parse JSON");
+			// With constrained decoding this shouldn't happen, but test error handling
+			expect(res.body.error).toBeDefined();
 		});
 
-		it("includes schema in enhanced prompt", async () => {
+		it("passes schema to CLI as --json-schema", async () => {
 			const mockProc = createMockChildProcess();
 			mockSpawn.mockReturnValue(mockProc as never);
 
@@ -360,11 +312,121 @@ describe("Generate Routes", () => {
 
 			await responsePromise;
 
-			// Check that the prompt was enhanced with schema
+			// Check that --json-schema flag was passed with the schema
+			expect(mockSpawn).toHaveBeenCalledWith(
+				"claude",
+				expect.arrayContaining(["--json-schema", JSON.stringify(validSchema)]),
+				expect.any(Object),
+			);
+		});
+
+		it("does not modify the user prompt", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/generate-object")
+				.send({ prompt: "Generate a person", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				simulateCliSuccess(
+					mockProc,
+					createCliResultJson({ result: '{"name": "Test"}' }),
+				);
+			});
+
+			await responsePromise;
+
+			// Check that the prompt was passed without modification
 			const spawnCall = mockSpawn.mock.calls[0];
-			const promptArg = spawnCall[1][spawnCall[1].length - 1];
-			expect(promptArg).toContain("JSON Schema");
-			expect(promptArg).toContain('"type": "object"');
+			const args = spawnCall[1] as string[];
+			const promptArg = args[args.length - 1];
+			expect(promptArg).toBe("Generate a person");
+		});
+
+		it("handles structured_output from CLI (native --json-schema response)", async () => {
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/generate-object")
+				.send({ prompt: "Generate a person", schema: validSchema });
+
+			afterSpawnCalled(mockSpawn, () => {
+				// CLI returns structured_output when --json-schema is used
+				simulateCliSuccess(
+					mockProc,
+					JSON.stringify({
+						type: "result",
+						structured_output: { name: "Alice", age: 30 },
+						usage: { input_tokens: 10, output_tokens: 15 },
+						session_id: "structured-session-456",
+					}),
+				);
+			});
+
+			const res = await responsePromise;
+
+			expect(res.status).toBe(200);
+			expect(res.body.object).toEqual({ name: "Alice", age: 30 });
+			// structured_output is stringified, then parsed back
+			expect(res.body.rawText).toBe('{"name":"Alice","age":30}');
+			expect(res.body.usage.inputTokens).toBe(10);
+			expect(res.body.usage.outputTokens).toBe(15);
+			expect(res.body.sessionId).toBe("structured-session-456");
+		});
+
+		it("handles structured_output with nested objects", async () => {
+			const nestedSchema = {
+				type: "object",
+				properties: {
+					user: {
+						type: "object",
+						properties: {
+							name: { type: "string" },
+							address: {
+								type: "object",
+								properties: {
+									city: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+			};
+
+			const mockProc = createMockChildProcess();
+			mockSpawn.mockReturnValue(mockProc as never);
+
+			const app = createTestApp();
+			const responsePromise = request(app)
+				.post("/generate-object")
+				.send({ prompt: "Generate nested data", schema: nestedSchema });
+
+			const nestedObject = {
+				user: {
+					name: "Bob",
+					address: { city: "Springfield" },
+				},
+			};
+
+			afterSpawnCalled(mockSpawn, () => {
+				simulateCliSuccess(
+					mockProc,
+					JSON.stringify({
+						type: "result",
+						structured_output: nestedObject,
+						usage: { input_tokens: 12, output_tokens: 18 },
+					}),
+				);
+			});
+
+			const res = await responsePromise;
+
+			expect(res.status).toBe(200);
+			expect(res.body.object).toEqual(nestedObject);
 		});
 	});
 });

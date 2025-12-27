@@ -1,47 +1,60 @@
 import { z } from "zod";
 
-// Request schemas
-export const generateTextRequestSchema = z.object({
+// =============================================================================
+// Request Schemas
+// =============================================================================
+
+/**
+ * Base request fields shared across all endpoints.
+ */
+const baseRequestSchema = z.object({
 	system: z.string().optional(),
 	prompt: z.string(),
 	sessionId: z.string().optional(),
-	maxTokens: z.number().optional(),
 	model: z.string().optional(),
 	/** User email for tool proxy access (enables Claude skills to call Inbox Zero tools) */
 	userEmail: z.string().email().optional(),
 });
 
-export const generateObjectRequestSchema = z.object({
-	system: z.string().optional(),
-	prompt: z.string(),
+export const generateTextRequestSchema = baseRequestSchema.extend({
+	/**
+	 * Maximum tokens to generate.
+	 * Note: Not currently used - Claude CLI does not support --max-tokens.
+	 * Kept for API compatibility; use model selection for output control.
+	 */
+	maxTokens: z.number().int().positive().optional(),
+});
+
+export const generateObjectRequestSchema = baseRequestSchema.extend({
 	schema: z.record(z.unknown()),
-	sessionId: z.string().optional(),
-	maxTokens: z.number().optional(),
-	model: z.string().optional(),
-	/** User email for tool proxy access (enables Claude skills to call Inbox Zero tools) */
-	userEmail: z.string().email().optional(),
+	/**
+	 * Maximum tokens to generate.
+	 * Note: Not currently used - Claude CLI does not support --max-tokens.
+	 * Kept for API compatibility; use model selection for output control.
+	 */
+	maxTokens: z.number().int().positive().optional(),
 });
 
-export const streamRequestSchema = z.object({
-	system: z.string().optional(),
-	prompt: z.string(),
-	sessionId: z.string().optional(),
-	model: z.string().optional(),
-	/** User email for tool proxy access (enables Claude skills to call Inbox Zero tools) */
-	userEmail: z.string().email().optional(),
-});
+export const streamRequestSchema = baseRequestSchema;
 
 // Inferred types
 export type GenerateTextRequest = z.infer<typeof generateTextRequestSchema>;
 export type GenerateObjectRequest = z.infer<typeof generateObjectRequestSchema>;
 export type StreamRequest = z.infer<typeof streamRequestSchema>;
 
-// Response schemas
-export const usageInfoSchema = z.object({
-	inputTokens: z.number(),
-	outputTokens: z.number(),
-	totalTokens: z.number(),
-});
+// =============================================================================
+// Response Schemas
+// =============================================================================
+
+export const usageInfoSchema = z
+	.object({
+		inputTokens: z.number().int().nonnegative(),
+		outputTokens: z.number().int().nonnegative(),
+		totalTokens: z.number().int().nonnegative(),
+	})
+	.refine((data) => data.totalTokens === data.inputTokens + data.outputTokens, {
+		message: "totalTokens must equal inputTokens + outputTokens",
+	});
 
 export const generateTextResponseSchema = z.object({
 	text: z.string(),
@@ -109,7 +122,36 @@ export type ErrorCode = z.infer<typeof errorCodeSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
-// Claude CLI output structure (from --output-format json)
+// =============================================================================
+// CLI Types
+// =============================================================================
+
+/**
+ * Usage info as returned by Claude CLI (snake_case).
+ * Shared across ClaudeCliOutput and streaming messages.
+ */
+export interface CliUsageInfo {
+	input_tokens?: number;
+	output_tokens?: number;
+	cache_creation_input_tokens?: number;
+	cache_read_input_tokens?: number;
+}
+
+/**
+ * Converts CLI usage info (snake_case) to API usage info (camelCase).
+ * Provides consistent calculation with safe defaults for missing values.
+ */
+export function createUsageInfo(cliUsage?: CliUsageInfo): UsageInfo {
+	const inputTokens = cliUsage?.input_tokens ?? 0;
+	const outputTokens = cliUsage?.output_tokens ?? 0;
+	return {
+		inputTokens,
+		outputTokens,
+		totalTokens: inputTokens + outputTokens,
+	};
+}
+
+/** Claude CLI output structure (from --output-format json) */
 export interface ClaudeCliOutput {
 	type: "result" | "error";
 	subtype?: string;
@@ -120,14 +162,7 @@ export interface ClaudeCliOutput {
 	is_error?: boolean;
 	session_id?: string;
 	num_turns?: number;
-	// New format (Claude CLI 1.0.17+)
-	usage?: {
-		input_tokens?: number;
-		output_tokens?: number;
-		cache_creation_input_tokens?: number;
-		cache_read_input_tokens?: number;
-	};
-	// Legacy format (kept for backwards compatibility)
-	total_tokens_in?: number;
-	total_tokens_out?: number;
+	usage?: CliUsageInfo;
+	/** Structured output from --json-schema flag */
+	structured_output?: unknown;
 }
