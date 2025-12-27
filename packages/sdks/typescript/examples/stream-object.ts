@@ -1,0 +1,96 @@
+/**
+ * stream-object.ts - streamObject example with real-time partial objects
+ *
+ * Demonstrates streaming structured data with progressive updates.
+ * Partial objects appear as the JSON is built incrementally.
+ *
+ * Run from packages/sdks/typescript:
+ *   bun run example:stream-object
+ */
+
+import {
+	type KoineConfig,
+	KoineError,
+	createKoine,
+} from "@patternzones/koine-sdk";
+import { z } from "zod";
+
+// Bun automatically loads .env from current working directory
+const authKey = process.env.CLAUDE_CODE_GATEWAY_API_KEY;
+if (!authKey) {
+	throw new Error("CLAUDE_CODE_GATEWAY_API_KEY is required in .env");
+}
+
+const config: KoineConfig = {
+	baseUrl: `http://localhost:${process.env.GATEWAY_PORT || "3100"}`,
+	authKey,
+	timeout: 300000,
+};
+
+const koine = createKoine(config);
+
+// Define the schema for a recipe
+const RecipeSchema = z.object({
+	name: z.string().describe("Name of the recipe"),
+	ingredients: z.array(z.string()).describe("List of ingredients"),
+	steps: z.array(z.string()).describe("Cooking instructions"),
+	prepTime: z.number().describe("Preparation time in minutes"),
+	cookTime: z.number().describe("Cooking time in minutes"),
+});
+
+async function main() {
+	console.log("Streaming structured object...\n");
+
+	const result = await koine.streamObject({
+		prompt: `Extract the recipe from this description:
+
+Make classic pancakes by mixing 1 cup flour, 1 egg, 1 cup milk, and 2 tbsp butter.
+First combine the dry ingredients, then whisk in the wet ingredients until smooth.
+Heat a griddle and pour 1/4 cup batter per pancake. Cook until bubbles form, flip,
+and cook until golden. Takes about 5 minutes to prep and 15 minutes to cook.`,
+		schema: RecipeSchema,
+	});
+
+	// Watch partial objects as they arrive
+	let updateCount = 0;
+	for await (const partial of result.partialObjectStream) {
+		updateCount++;
+		console.log(`--- Partial update ${updateCount} ---`);
+		console.log(JSON.stringify(partial, null, 2));
+		console.log();
+	}
+
+	// Get the final validated object
+	const finalObject = await result.object;
+	console.log("=== Final validated object ===");
+	console.log(JSON.stringify(finalObject, null, 2));
+
+	const usage = await result.usage;
+	console.log(
+		`\nTokens used: ${usage.totalTokens} (input: ${usage.inputTokens}, output: ${usage.outputTokens})`,
+	);
+}
+
+main().catch((error) => {
+	if (error instanceof KoineError) {
+		console.error(`\nKoine Error [${error.code}]: ${error.message}`);
+		if (error.code === "VALIDATION_ERROR") {
+			console.error("  -> The response didn't match the expected schema");
+			if (error.rawText) {
+				console.error(`  -> Raw response: ${error.rawText}`);
+			}
+		} else if (error.code === "HTTP_ERROR" && error.message.includes("401")) {
+			console.error("  -> Check that CLAUDE_CODE_GATEWAY_API_KEY is correct");
+		} else if (error.code === "STREAM_ERROR") {
+			console.error("  -> The stream was interrupted");
+		}
+	} else if (error?.cause?.code === "ECONNREFUSED") {
+		console.error("\nConnection refused. Is the gateway running?");
+		console.error(
+			"  -> Start it with: docker run -d --env-file .env -p 3100:3100 ghcr.io/pattern-zones-co/koine:latest",
+		);
+	} else {
+		console.error("\nUnexpected error:", error);
+	}
+	process.exit(1);
+});
