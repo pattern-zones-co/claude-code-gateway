@@ -100,7 +100,7 @@ console.log(result.text);
 >
 > Claude Code has full access to its environment — filesystem, shell, and network. Koine exposes this power to your applications.
 >
-> - **Use Docker**: containers provide essential filesystem and process isolation
+> - **Use a devcontainer**: deploy on an isolated VPS or inside a properly secured container; running this baremetal alongside other services is unwise
 > - **Internal networks only**: deploy on VPN or Docker networks, not public internet
 > - **Use API keys**: Anthropic API keys operate under the [Commercial Terms](https://www.anthropic.com/legal/commercial-terms) which permit programmatic access
 >
