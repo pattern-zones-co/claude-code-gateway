@@ -102,8 +102,8 @@ console.log(result.text);
 > It is strongly advised that you do NOT run koine on bare metal alongside other services.
 >
 > - **Use a devcontainer**: deploy inside a properly secured container or isolated on a VPS
-> - **Internal networks only**: deploy on VPN or Docker networks, not public internet
-> - **Use API keys**: Anthropic API keys operate under the [Commercial Terms](https://www.anthropic.com/legal/commercial-terms) which permit programmatic access
+> - **Internal networks and/or zero trust**: deploy on VPN (such as a Docker network) or through a zero trust pattern
+> - **Use an API key**: using a long-lived Oauth token likely violates Anthropic's Consumer Terms
 >
 > See [Environment Variables](docs/environment-variables.md) for configuration details.
 
